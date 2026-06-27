@@ -29,14 +29,24 @@
   const app = document.getElementById("app");
 
   document.addEventListener("DOMContentLoaded", boot);
-  /* ── Screen-capture / recording protection ── */
+
+  /* ══════════════════════════════════════════════
+     CONTENT PROTECTION — Desktop + Mobile
+     ══════════════════════════════════════════════ */
+
+  /* 1. Block right-click / long-press on video */
   document.addEventListener("contextmenu", (event) => {
-    if (event.target.closest(".video-protected, .video-container")) event.preventDefault();
+    if (event.target.closest(".video-protected, .video-container")) {
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    }
   });
+
+  /* 2. Block keyboard shortcuts (Desktop) */
   document.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
     if (event.target.closest("input, textarea")) return;
-    /* Block PrintScreen, Ctrl+Shift+I/J/C, Ctrl+P (print), Ctrl+S (save) */
     if (
       key === "printscreen" ||
       (event.ctrlKey && event.shiftKey && ["i", "j", "c", "s"].includes(key)) ||
@@ -47,35 +57,96 @@
       toast("المحتوى محمي. التصوير أو الطباعة غير مسموح.");
     }
   });
-  /* When window loses focus → BLACK out the video (not just blur) */
-  window.addEventListener("blur", () => {
-    document.body.classList.add("privacy-black");
-    document.body.classList.remove("privacy-blur");
-  });
-  window.addEventListener("focus", () => {
-    document.body.classList.remove("privacy-black");
-    document.body.classList.remove("privacy-blur");
-  });
+
+  /* 3. Visibility change — BLACK screen (works on both Desktop & Mobile) */
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       document.body.classList.add("privacy-black");
     } else {
-      document.body.classList.remove("privacy-black");
+      /* Small delay before removing black — catches quick screenshot attempts */
+      setTimeout(() => document.body.classList.remove("privacy-black"), 300);
     }
   });
-  /* Disable Picture-in-Picture globally */
+
+  /* 4. Window blur/focus — BLACK screen */
+  window.addEventListener("blur", () => {
+    document.body.classList.add("privacy-black");
+  });
+  window.addEventListener("focus", () => {
+    setTimeout(() => document.body.classList.remove("privacy-black"), 300);
+  });
+
+  /* 5. Pause/Resume events (Mobile browsers) */
+  window.addEventListener("pagehide", () => {
+    document.body.classList.add("privacy-black");
+  });
+  window.addEventListener("pageshow", () => {
+    setTimeout(() => document.body.classList.remove("privacy-black"), 300);
+  });
+
+  /* 6. Mobile: block long-press (save image / share) */
+  document.addEventListener("touchstart", (event) => {
+    if (event.target.closest(".video-protected, .video-container, .video-box")) {
+      /* Prevent long-press context menu on mobile */
+      event.target.style.webkitTouchCallout = "none";
+    }
+  }, { passive: true });
+
+  /* 7. Mobile: detect iOS screenshot (screen resize flicker) */
+  let lastWidth = window.innerWidth;
+  let lastHeight = window.innerHeight;
+  window.addEventListener("resize", () => {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    /* iOS screenshots cause a brief resize event */
+    if (Math.abs(w - lastWidth) > 50 || Math.abs(h - lastHeight) > 50) {
+      document.body.classList.add("privacy-black");
+      toast("تم اكتشاف محاولة تصوير الشاشة.");
+      setTimeout(() => document.body.classList.remove("privacy-black"), 2000);
+    }
+    lastWidth = w;
+    lastHeight = h;
+  });
+
+  /* 8. Disable Picture-in-Picture */
   document.addEventListener("enterpictureinpicture", (e) => {
     e.preventDefault();
     toast("وضع الصورة المصغرة غير مسموح.");
   });
-  /* Try to block screen capture API */
+
+  /* 9. Block screen capture API */
   if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-    const origGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
     navigator.mediaDevices.getDisplayMedia = function() {
       toast("تسجيل الشاشة غير مسموح أثناء المشاهدة.");
       return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
     };
   }
+
+  /* 10. Mobile: detect screen recording (Android control center / iOS) */
+  /* When screen recording starts, some browsers fire blur + focus rapidly */
+  let blurFocusCount = 0;
+  let blurFocusTimer = null;
+  function trackBlurFocus() {
+    blurFocusCount++;
+    if (blurFocusTimer) clearTimeout(blurFocusTimer);
+    blurFocusTimer = setTimeout(() => {
+      if (blurFocusCount >= 3) {
+        document.body.classList.add("privacy-black");
+        toast("تم اكتشاف محاولة تسجيل الشاشة. الفيديو محمي.");
+        setTimeout(() => document.body.classList.remove("privacy-black"), 3000);
+      }
+      blurFocusCount = 0;
+    }, 1000);
+  }
+  window.addEventListener("blur", trackBlurFocus);
+  window.addEventListener("focus", trackBlurFocus);
+
+  /* 11. Prevent drag (mobile & desktop) */
+  document.addEventListener("dragstart", (e) => {
+    if (e.target.closest(".video-protected, .video-container")) {
+      e.preventDefault();
+    }
+  });
 
   async function boot() {
     renderSplash();
@@ -1026,10 +1097,22 @@
           </div>
           <div class="video-controls" data-yt-controls>
             <button data-yt-play title="تشغيل / إيقاف">▶</button>
+            <button data-yt-skip="-5" title="رجوع 5 ثوان">⟲5</button>
+            <button data-yt-skip="5" title="تقديم 5 ثوان">5⟳</button>
             <div class="video-progress-bar" data-yt-progress>
               <div class="video-progress-fill" data-yt-progress-fill></div>
             </div>
             <span class="video-time" data-yt-time>0:00</span>
+            <select class="video-speed" data-yt-speed title="سرعة التشغيل">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="1.75">1.75x</option>
+              <option value="2">2x</option>
+            </select>
             <button data-yt-mute title="صوت">🔊</button>
             <div class="video-volume-bar" data-yt-volume>
               <div class="video-volume-fill" data-yt-volume-fill></div>
@@ -1162,6 +1245,23 @@
       } else {
         container.requestFullscreen().catch(() => {});
       }
+    });
+
+    /* Skip forward / backward */
+    document.querySelectorAll("[data-yt-skip]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!ytPlayerReady) return;
+        const offset = Number(btn.dataset.ytSkip);
+        const current = ytPlayer.getCurrentTime();
+        ytPlayer.seekTo(Math.max(0, current + offset), true);
+      });
+    });
+
+    /* Playback speed */
+    const speedSelect = document.querySelector("[data-yt-speed]");
+    if (speedSelect) speedSelect.addEventListener("change", () => {
+      if (!ytPlayerReady) return;
+      ytPlayer.setPlaybackRate(Number(speedSelect.value));
     });
   }
 

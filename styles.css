@@ -945,6 +945,45 @@ button {
   width: 100%;
 }
 
+/* Speed selector */
+.video-speed {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 8px;
+  min-height: 32px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.2s ease;
+  font-family: inherit;
+}
+
+.video-speed:hover,
+.video-speed:focus {
+  background: rgba(255,255,255,0.25);
+  outline: none;
+}
+
+.video-speed option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+/* Skip buttons text sizing */
+.video-controls button[data-yt-skip] {
+  font-size: 13px;
+  font-weight: 800;
+  width: auto;
+  padding: 0 10px;
+  border-radius: 8px;
+  min-width: 42px;
+}
+
 /* Click-to-play overlay covering iframe to intercept clicks */
 .video-click-layer {
   position: absolute;
@@ -966,13 +1005,27 @@ button {
    PRIVACY / SCREEN CAPTURE PROTECTION
    ═══════════════════════════════════════ */
 
-/* When page loses focus — BLACK screen (not blur) */
-body.privacy-black .video-protected iframe,
-body.privacy-black .video-protected video {
-  filter: brightness(0) !important;
+/* Mobile: prevent long-press actions */
+.video-protected,
+.video-container,
+.video-box,
+.video-box iframe {
+  -webkit-touch-callout: none !important;
+  -webkit-user-select: none !important;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-body.privacy-black .video-protected::after {
+/* When page loses focus — BLACK screen (not blur) */
+body.privacy-black .video-protected iframe,
+body.privacy-black .video-protected video,
+body.privacy-black .video-container iframe {
+  filter: brightness(0) !important;
+  opacity: 0 !important;
+}
+
+body.privacy-black .video-protected::after,
+body.privacy-black .video-container .video-box::after {
   content: "الفيديو محمي — ارجع للمنصة لاستكمال المشاهدة";
   position: absolute;
   inset: 0;
@@ -983,6 +1036,15 @@ body.privacy-black .video-protected::after {
   color: rgba(255,255,255,0.6);
   font-size: 18px;
   font-weight: 800;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Hide watermarks and overlays too when black */
+body.privacy-black .video-watermark,
+body.privacy-black .video-watermark-center,
+body.privacy-black .video-controls {
+  opacity: 0 !important;
 }
 
 /* Legacy blur kept for non-video elements */
