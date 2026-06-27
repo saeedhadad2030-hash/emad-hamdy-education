@@ -150,9 +150,13 @@
 
   async function boot() {
     renderSplash();
-    await loadSession();
-    await loadData();
-    restoreRouteFromHash();
+    try {
+      await loadSession();
+      await loadData();
+      restoreRouteFromHash();
+    } catch (err) {
+      console.error("Boot error:", err);
+    }
     setTimeout(() => {
       const splash = document.querySelector(".splash");
       if (splash) splash.classList.add("hide");
