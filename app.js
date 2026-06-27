@@ -159,7 +159,12 @@
     renderSplash();
     try {
       await loadSession();
-      await loadData();
+      /* Only load data if user is logged in — login page doesn't need data */
+      if (state.user) {
+        await loadData();
+      } else {
+        state.data = emptyData();
+      }
       restoreRouteFromHash();
     } catch (err) {
       console.error("Boot error:", err);
@@ -1524,8 +1529,13 @@
       state.profile = await getOrCreateProfile(data.user);
     }
 
-    await loadData();
+    /* Render home page IMMEDIATELY — don't wait for data */
+    state.data = emptyData();
     render();
+    toast("مرحباً " + (state.profile?.full_name || "") + "! جاري تحميل البيانات...");
+
+    /* Load data in background then re-render */
+    loadData().then(() => render());
   }
 
   function friendlyAuthError(msg) {
