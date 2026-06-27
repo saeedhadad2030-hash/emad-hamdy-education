@@ -164,10 +164,8 @@
     } catch (err) {
       console.error("Boot error:", err);
     }
-    setTimeout(() => {
-      const splash = document.querySelector(".splash");
-      if (splash) splash.classList.add("hide");
-    }, 900);
+    const splash = document.querySelector(".splash");
+    if (splash) splash.classList.add("hide");
     render();
   }
 
@@ -1496,11 +1494,15 @@
   async function handleAuthSubmit(event) {
     event.preventDefault();
     const form = event.currentTarget;
+    const btn = form.querySelector('button[type="submit"]');
     const values = formValues(form);
     if (!hasSupabase) {
       toast("اضبط Supabase أولًا من config.js.");
       return;
     }
+
+    /* Show loading state */
+    if (btn) { btn.disabled = true; btn.textContent = "جاري التحميل..."; }
 
     if (state.authMode === "signup") {
       const { data, error } = await client.auth.signUp({
@@ -1508,8 +1510,8 @@
         password: values.password,
         options: { data: { full_name: values.name, login_password: values.password } }
       });
-      if (error) return toast(friendlyAuthError(error.message));
-      if (!data.user) return toast("حدث خطأ غير متوقع. حاول مرة أخرى.");
+      if (error) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast(friendlyAuthError(error.message)); }
+      if (!data.user) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast("حدث خطأ غير متوقع. حاول مرة أخرى."); }
       state.user = data.user;
       state.profile = await getOrCreateProfile(data.user, values.name);
     } else {
@@ -1517,7 +1519,7 @@
         email: values.email,
         password: values.password
       });
-      if (error) return toast(friendlyAuthError(error.message));
+      if (error) { if (btn) { btn.disabled = false; btn.textContent = "تسجيل الدخول"; } return toast(friendlyAuthError(error.message)); }
       state.user = data.user;
       state.profile = await getOrCreateProfile(data.user);
     }

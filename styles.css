@@ -1004,7 +1004,22 @@ button {
   touch-action: manipulation;
 }
 
-/* When page loses focus — BLACK screen (not blur) */
+/* DRM-like protection layer over video */
+.video-protected {
+  position: relative;
+}
+
+.video-protected::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  mix-blend-mode: difference;
+  background: rgba(0, 0, 0, 0.005);
+}
+
+/* When page loses focus — BLACK screen */
 body.privacy-black .video-protected iframe,
 body.privacy-black .video-protected video,
 body.privacy-black .video-container iframe {
