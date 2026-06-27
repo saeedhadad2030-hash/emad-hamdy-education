@@ -1092,23 +1092,29 @@ body.privacy-black .video-container iframe {
 
 body.privacy-black .video-protected::after,
 body.privacy-black .video-container .video-box::after {
-  content: "الفيديو محمي — ارجع للمنصة لاستكمال المشاهدة";
+  content: "";
   position: absolute;
   inset: 0;
   z-index: 20;
-  display: grid;
-  place-items: center;
   background: #000;
-  color: rgba(255,255,255,0.6);
-  font-size: 18px;
-  font-weight: 800;
-  text-align: center;
-  padding: 20px;
 }
 
-/* Hide watermarks and overlays too when black */
-body.privacy-black .video-watermark,
-body.privacy-black .video-watermark-center,
+/* Show student name/email ON TOP of black screen — visible in screenshots */
+body.privacy-black .video-watermark {
+  z-index: 25 !important;
+  opacity: 0.7 !important;
+  font-size: 16px !important;
+  color: #4a4a4a !important;
+}
+
+body.privacy-black .video-watermark-center {
+  z-index: 25 !important;
+  opacity: 0.5 !important;
+  font-size: 22px !important;
+  color: #555 !important;
+}
+
+/* Hide controls when black */
 body.privacy-black .video-controls {
   opacity: 0 !important;
 }
