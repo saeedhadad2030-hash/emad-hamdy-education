@@ -183,7 +183,8 @@
       enrollments: [],
       posts: [],
       comments: [],
-      supportMessages: []
+      supportMessages: [],
+      lessonCounts: {}
     };
   }
 
@@ -196,7 +197,8 @@
       enrollments,
       posts,
       comments,
-      supportMessages
+      supportMessages,
+      lessonCounts
     ] = await Promise.all([
       selectTable("profiles", 500),
       selectTable("courses", 200),
@@ -205,7 +207,8 @@
       selectTable("enrollments", 1000),
       selectTable("posts", 120),
       selectTable("comments", 300),
-      selectTable("support_messages", 200)
+      selectTable("support_messages", 200),
+      loadLessonCounts()
     ]);
 
     return {
@@ -216,8 +219,21 @@
       enrollments,
       posts,
       comments,
-      supportMessages
+      supportMessages,
+      lessonCounts
     };
+  }
+
+  async function loadLessonCounts() {
+    try {
+      const { data, error } = await client.rpc("get_course_lesson_counts");
+      if (error || !data) return {};
+      const map = {};
+      data.forEach((row) => { map[row.course_id] = Number(row.lesson_count); });
+      return map;
+    } catch (e) {
+      return {};
+    }
   }
 
   async function selectTable(table, limit = 200) {
@@ -2014,6 +2030,11 @@
   }
 
   function countLessons(courseId) {
+    /* Use server-side count (bypasses RLS) if available */
+    if (state.data.lessonCounts && state.data.lessonCounts[courseId] !== undefined) {
+      return state.data.lessonCounts[courseId];
+    }
+    /* Fallback: count from locally loaded data */
     const sectionIds = state.data.sections.filter((section) => section.courseId === courseId).map((section) => section.id);
     return state.data.lessons.filter((lesson) => sectionIds.includes(lesson.sectionId)).length;
   }

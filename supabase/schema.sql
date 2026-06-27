@@ -268,3 +268,19 @@ create policy "support read own or admin" on public.support_messages
   for select using (user_id = auth.uid() or public.is_admin());
 create policy "support admin update" on public.support_messages
   for update using (public.is_admin()) with check (public.is_admin());
+
+-- Function to count lessons per course (bypasses RLS so students see video counts)
+create or replace function public.get_course_lesson_counts()
+returns table (course_id uuid, lesson_count bigint)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select c.id as course_id, count(l.id) as lesson_count
+  from public.courses c
+  left join public.course_sections s on s.course_id = c.id
+  left join public.lessons l on l.section_id = s.id
+  where c.is_published = true
+  group by c.id;
+$$;
