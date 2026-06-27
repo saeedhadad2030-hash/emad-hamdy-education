@@ -1,4 +1,4 @@
-﻿(function () {
+(function () {
   const config = window.APP_CONFIG || {};
   const hasSupabase = Boolean(config.supabaseUrl && config.supabaseAnonKey && window.supabase);
   const client = hasSupabase
@@ -37,7 +37,7 @@
     if (event.target.closest("input, textarea")) return;
     if (key === "printscreen" || (event.ctrlKey && event.shiftKey && ["i", "j", "c"].includes(key))) {
       event.preventDefault();
-      toast("ØªÙ… ØªÙØ¹ÙŠÙ„ Ø­Ù…Ø§ÙŠØ© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ. Ø§Ù„ØªØ³Ø¬ÙŠÙ„ Ø£Ùˆ Ø§Ù„ØªØµÙˆÙŠØ± ØºÙŠØ± Ù…Ø³Ù…ÙˆØ­.");
+      toast("تم تفعيل حماية الفيديو. التسجيل أو التصوير غير مسموح.");
     }
   });
   window.addEventListener("blur", () => document.body.classList.add("privacy-blur"));
@@ -96,14 +96,14 @@
       comments,
       supportMessages
     ] = await Promise.all([
-      selectTable("profiles"),
-      selectTable("courses"),
-      selectTable("course_sections"),
-      selectTable("lessons"),
-      selectTable("enrollments"),
-      selectTable("posts"),
-      selectTable("comments"),
-      selectTable("support_messages")
+      selectTable("profiles", 500),
+      selectTable("courses", 200),
+      selectTable("course_sections", 500),
+      selectTable("lessons", 800),
+      selectTable("enrollments", 1000),
+      selectTable("posts", 120),
+      selectTable("comments", 300),
+      selectTable("support_messages", 200)
     ]);
 
     return {
@@ -118,8 +118,12 @@
     };
   }
 
-  async function selectTable(table) {
-    const { data, error } = await client.from(table).select("*").order("created_at", { ascending: false });
+  async function selectTable(table, limit = 200) {
+    const { data, error } = await client
+      .from(table)
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(limit);
     if (error) {
       console.warn(error);
       return [];
@@ -155,18 +159,16 @@
       <div class="splash">
         <div>
           ${logoSvg("brand-mark")}
-          <h1>Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</h1>
-          <p>ØªØ§Ø±ÙŠØ® ÙˆØ¬ØºØ±Ø§ÙÙŠØ§ Ø¨Ø´ÙƒÙ„ Ø£ÙˆØ¶Ø­</p>
+          <h1>مستر عماد حمدي</h1>
+          <p>تاريخ وجغرافيا بشكل أوضح</p>
         </div>
       </div>
     `;
-    repairArabicText(app);
   }
 
   function render() {
     if (!state.user) {
       app.innerHTML = hasSupabase ? renderAuth() : renderSetupRequired();
-      repairArabicText(app);
       bindAuth();
       return;
     }
@@ -181,7 +183,6 @@
         </div>
       </div>
     `;
-    repairArabicText(app);
     bindGlobal();
     bindRoute();
   }
@@ -194,19 +195,19 @@
           <div class="brand">
             ${logoSvg("brand-mark")}
             <div>
-              <h1>Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</h1>
-              <p>Ù…Ù†ØµØ© Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ù„Ø¬ØºØ±Ø§ÙÙŠØ§</p>
+              <h1>مستر عماد حمدي</h1>
+              <p>منصة التاريخ والجغرافيا</p>
             </div>
           </div>
           <div class="tabs">
-            <button class="${isLogin ? "active" : ""}" data-auth-tab="login">ØªØ³Ø¬ÙŠÙ„ Ø¯Ø®ÙˆÙ„</button>
-            <button class="${!isLogin ? "active" : ""}" data-auth-tab="signup">Ø¥Ù†Ø´Ø§Ø¡ Ø­Ø³Ø§Ø¨</button>
+            <button class="${isLogin ? "active" : ""}" data-auth-tab="login">تسجيل دخول</button>
+            <button class="${!isLogin ? "active" : ""}" data-auth-tab="signup">إنشاء حساب</button>
           </div>
           <form class="form" data-auth-form>
-            ${!isLogin ? `<label>Ø§Ù„Ø§Ø³Ù…<input class="field" name="name" required placeholder="Ø§ÙƒØªØ¨ Ø§Ø³Ù…Ùƒ" /></label>` : ""}
-            <label>Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ<input class="field" name="email" type="email" required placeholder="name@example.com" /></label>
-            <label>ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø±<input class="field" name="password" type="password" required minlength="6" placeholder="******" /></label>
-            <button class="btn gold" type="submit">${isLogin ? "Ø¯Ø®ÙˆÙ„" : "ØªØ³Ø¬ÙŠÙ„"}</button>
+            ${!isLogin ? `<label>الاسم<input class="field" name="name" required placeholder="اكتب اسمك" /></label>` : ""}
+            <label>البريد الإلكتروني<input class="field" name="email" type="email" required placeholder="name@example.com" /></label>
+            <label>كلمة السر<input class="field" name="password" type="password" required minlength="6" placeholder="******" /></label>
+            <button class="btn gold" type="submit">${isLogin ? "دخول" : "تسجيل"}</button>
           </form>
         </section>
       </div>
@@ -220,12 +221,12 @@
           <div class="brand">
             ${logoSvg("brand-mark")}
             <div>
-              <h1>Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</h1>
-              <p>Ø¥Ø¹Ø¯Ø§Ø¯ Ø§Ù„Ù…Ù†ØµØ© Ù…Ø·Ù„ÙˆØ¨</p>
+              <h1>مستر عماد حمدي</h1>
+              <p>إعداد المنصة مطلوب</p>
             </div>
           </div>
-          <h2>Ø§Ù„Ù†Ø³Ø®Ø© Ø§Ù„Ù†Ù‡Ø§Ø¦ÙŠØ© Ù„Ø§ ØªØ­ØªÙˆÙŠ Ø¹Ù„Ù‰ Ø¨ÙŠØ§Ù†Ø§Øª ØªØ¬Ø±ÙŠØ¨ÙŠØ©</h2>
-          <p class="muted">Ø¶Ø¹ Ø¨ÙŠØ§Ù†Ø§Øª Supabase ÙÙŠ Ù…Ù„Ù config.js Ø«Ù… Ø´ØºÙ„ SQL Ø§Ù„Ù…ÙˆØ¬ÙˆØ¯ ÙÙŠ supabase/schema.sql. Ø¨Ø¹Ø¯ Ø°Ù„Ùƒ Ø£Ù†Ø´Ø¦ Ø­Ø³Ø§Ø¨ Ø§Ù„Ù…Ø¯Ø±Ø³ Ù…Ù† Supabase Auth Ø¨Ù†ÙØ³ Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ù…Ø­Ø¯Ø¯ ÙÙŠ app_settings.</p>
+          <h2>النسخة النهائية لا تحتوي على بيانات تجريبية</h2>
+          <p class="muted">ضع بيانات Supabase في ملف config.js ثم شغل SQL الموجود في supabase/schema.sql. بعد ذلك أنشئ حساب المدرس من Supabase Auth بنفس البريد المحدد في app_settings.</p>
         </section>
       </div>
     `;
@@ -237,15 +238,15 @@
         <div class="brand">
           ${logoSvg("brand-mark")}
           <div>
-            <h2>Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</h2>
-            <p>ØªØ§Ø±ÙŠØ® ÙˆØ¬ØºØ±Ø§ÙÙŠØ§</p>
+            <h2>مستر عماد حمدي</h2>
+            <p>تاريخ وجغرافيا</p>
           </div>
         </div>
         ${renderMainNav("nav")}
         <div class="user-card">
           <strong>${escapeHtml(state.profile.full_name)}</strong>
           <span class="muted">${escapeHtml(state.profile.email)}</span>
-          <div style="margin-top:10px">${isAdmin() ? `<span class="pill gold">ÙˆØ¶Ø¹ Ø§Ù„Ù…Ø¯Ø±Ø³</span>` : `<span class="pill">Ø·Ø§Ù„Ø¨</span>`}</div>
+          <div style="margin-top:10px">${isAdmin() ? `<span class="pill gold">وضع المدرس</span>` : `<span class="pill">طالب</span>`}</div>
         </div>
       </aside>
     `;
@@ -257,11 +258,11 @@
         <div class="brand">
           ${logoSvg("brand-mark")}
           <div>
-            <h2>Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</h2>
-            <p>${isAdmin() ? "ÙˆØ¶Ø¹ Ø§Ù„Ù…Ø¯Ø±Ø³" : "ØªØ§Ø±ÙŠØ® ÙˆØ¬ØºØ±Ø§ÙÙŠØ§"}</p>
+            <h2>مستر عماد حمدي</h2>
+            <p>${isAdmin() ? "وضع المدرس" : "تاريخ وجغرافيا"}</p>
           </div>
         </div>
-        <button class="btn ghost" data-logout>Ø®Ø±ÙˆØ¬</button>
+        <button class="btn ghost" data-logout>خروج</button>
       </header>
     `;
   }
@@ -272,12 +273,12 @@
 
   function renderMainNav(className) {
     const items = [
-      ["home", "home", "Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©"],
-      ["courses", "courses", "Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª"],
-      ["posts", "posts", "Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª"],
-      ["support", "support", "Ø§Ù„Ø¯Ø¹Ù…"],
-      ...(isAdmin() ? [["students", "students", "Ø§Ù„Ø·Ù„Ø§Ø¨"]] : []),
-      ["more", "more", "Ø§Ù„Ù…Ø²ÙŠØ¯"]
+      ["home", "home", "الرئيسية"],
+      ["courses", "courses", "الكورسات"],
+      ["posts", "posts", "المنشورات"],
+      ["support", "support", "الدعم"],
+      ...(isAdmin() ? [["students", "students", "الطلاب"]] : []),
+      ["more", "more", "المزيد"]
     ];
     return `
       <nav class="${className}">
@@ -294,11 +295,11 @@
 
   function renderNav(className) {
     const items = [
-      ["home", "âŒ‚", "Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©"],
-      ["courses", "â–¦", "Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª"],
-      ["posts", "â—«", "Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª"],
-      ["support", "âœ‰", "Ø§Ù„Ø¯Ø¹Ù…"],
-      ["more", "â˜°", "Ø§Ù„Ù…Ø²ÙŠØ¯"]
+      ["home", "⌂", "الرئيسية"],
+      ["courses", "▦", "الكورسات"],
+      ["posts", "◫", "المنشورات"],
+      ["support", "✉", "الدعم"],
+      ["more", "☰", "المزيد"]
     ];
     return `
       <nav class="${className}">
@@ -329,34 +330,34 @@
     return `
       <section class="hero">
         <div class="hero-panel">
-          <span class="pill gold">Ù…Ù†ØµØ© ØªØ§Ø±ÙŠØ® ÙˆØ¬ØºØ±Ø§ÙÙŠØ§</span>
-          <h2>Ø§ÙÙ‡Ù… Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ù„Ø¬ØºØ±Ø§ÙÙŠØ§ Ù…Ù† ØºÙŠØ± Ø­ÙØ¸ Ø£Ø¹Ù…Ù‰.</h2>
-          <p>ÙƒÙˆØ±Ø³Ø§Øª Ù…Ù†Ø¸Ù…Ø©ØŒ ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª Ù…Ø±ØªØ¨Ø© Ø­Ø³Ø¨ Ø§Ù„Ø£Ù‚Ø³Ø§Ù…ØŒ ÙˆÙ…ØªØ§Ø¨Ø¹Ø© Ù…Ù† Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ Ù„Ù„Ø·Ù„Ø§Ø¨ Ø®Ø·ÙˆØ© Ø¨Ø®Ø·ÙˆØ©.</p>
+          <span class="pill gold">منصة تاريخ وجغرافيا</span>
+          <h2>افهم التاريخ والجغرافيا من غير حفظ أعمى.</h2>
+          <p>كورسات منظمة، فيديوهات مرتبة حسب الأقسام، ومتابعة من مستر عماد حمدي للطلاب خطوة بخطوة.</p>
           <div class="hero-actions">
-            <button class="btn gold" data-route="courses">ØªØµÙØ­ Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª</button>
-            <button class="btn secondary" data-route="support">ØªÙˆØ§ØµÙ„ Ù…Ø¹Ø§Ù†Ø§</button>
+            <button class="btn gold" data-route="courses">تصفح الكورسات</button>
+            <button class="btn secondary" data-route="support">تواصل معانا</button>
           </div>
         </div>
         <aside class="side-panel card">
-          <h3>Ù…Ù„Ø®Øµ Ø§Ù„Ù…Ù†ØµØ©</h3>
+          <h3>ملخص المنصة</h3>
           <div class="kpi-grid">
-            <div class="stat-card"><span>Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª</span><strong>${visibleCourses().length}</strong></div>
-            <div class="stat-card"><span>Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª</span><strong>${state.data.lessons.length}</strong></div>
-            <div class="stat-card"><span>Ø§Ø´ØªØ±Ø§ÙƒØ§Øª Ù…ÙØ¹Ù„Ø©</span><strong>${activeEnrollments}</strong></div>
+            <div class="stat-card"><span>الكورسات</span><strong>${visibleCourses().length}</strong></div>
+            <div class="stat-card"><span>الفيديوهات</span><strong>${state.data.lessons.length}</strong></div>
+            <div class="stat-card"><span>اشتراكات مفعلة</span><strong>${activeEnrollments}</strong></div>
           </div>
         </aside>
       </section>
       <section class="section">
         <div class="section-title">
-          <h2>Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª Ø§Ù„Ø£ÙƒØ«Ø± Ø£Ù‡Ù…ÙŠØ©</h2>
-          <button class="btn ghost" data-route="courses">Ø¹Ø±Ø¶ Ø§Ù„ÙƒÙ„</button>
+          <h2>الكورسات الأكثر أهمية</h2>
+          <button class="btn ghost" data-route="courses">عرض الكل</button>
         </div>
         ${renderCourseStrip(visibleCourses().slice(0, 6))}
       </section>
       <section class="section">
         <div class="section-title">
-          <h2>Ø¢Ø®Ø± Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª</h2>
-          <button class="btn ghost" data-route="posts">ÙƒÙ„ Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª</button>
+          <h2>آخر المنشورات</h2>
+          <button class="btn ghost" data-route="posts">كل المنشورات</button>
         </div>
         <div class="grid two">${visiblePosts().slice(0, 2).map(renderPostCard).join("")}</div>
       </section>
@@ -369,8 +370,8 @@
     return `
       <section>
         <div class="section-title">
-          <h2>Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª Ø§Ù„ØªØ¹Ù„ÙŠÙ…ÙŠØ©</h2>
-          <input class="search" data-search placeholder="Ø§Ø¨Ø­Ø« Ø¨Ø§Ø³Ù… Ø§Ù„ÙƒÙˆØ±Ø³ Ø£Ùˆ Ø§Ù„ØµÙ" value="${escapeAttr(state.search)}" />
+          <h2>الكورسات التعليمية</h2>
+          <input class="search" data-search placeholder="ابحث باسم الكورس أو الصف" value="${escapeAttr(state.search)}" />
         </div>
         ${isAdmin() ? renderCourseEditor() : ""}
         ${renderCourseStrip(courses)}
@@ -381,13 +382,13 @@
   function renderCourseStrip(courses) {
     return `
       <div class="course-carousel">
-        <button class="strip-btn strip-btn-right" data-course-scroll="back" type="button" aria-label="Ø§Ù„Ø³Ø§Ø¨Ù‚">
+        <button class="strip-btn strip-btn-right" data-course-scroll="back" type="button" aria-label="السابق">
           ${iconSvg("chevronRight")}
         </button>
         <div class="course-strip" data-course-strip>
-          ${courses.map(renderCourseCard).join("") || empty("Ù„Ø§ ØªÙˆØ¬Ø¯ ÙƒÙˆØ±Ø³Ø§Øª Ù…Ø·Ø§Ø¨Ù‚Ø©.")}
+          ${courses.map(renderCourseCard).join("") || empty("لا توجد كورسات مطابقة.")}
         </div>
-        <button class="strip-btn strip-btn-left" data-course-scroll="next" type="button" aria-label="Ø§Ù„ØªØ§Ù„ÙŠ">
+        <button class="strip-btn strip-btn-left" data-course-scroll="next" type="button" aria-label="التالي">
           ${iconSvg("chevronLeft")}
         </button>
       </div>
@@ -396,7 +397,7 @@
 
   function renderCourseCard(course) {
     const enrollment = getEnrollment(course.id);
-    const status = enrollment ? statusLabel(enrollment.status) : "ØºÙŠØ± Ù…Ø´ØªØ±Ùƒ";
+    const status = enrollment ? statusLabel(enrollment.status) : "غير مشترك";
     return `
       <article class="course-card">
         <div class="course-image" style="${bg(course.image_url)}"></div>
@@ -407,10 +408,10 @@
           <p class="price">${priceText(course)}</p>
           <div class="row">
             <span class="pill ${enrollment?.status === "active" ? "" : "gold"}">${status}</span>
-            <span class="muted">${countLessons(course.id)} ÙÙŠØ¯ÙŠÙˆ</span>
+            <span class="muted">${countLessons(course.id)} فيديو</span>
           </div>
           <div class="card-actions">
-            <button class="btn" data-open-course="${course.id}">Ø£Ù‚Ø³Ø§Ù… Ø§Ù„ÙƒÙˆØ±Ø³</button>
+            <button class="btn" data-open-course="${course.id}">أقسام الكورس</button>
             ${renderBuyButton(course)}
           </div>
           ${isAdmin() ? renderCourseAdminActions(course) : ""}
@@ -422,9 +423,9 @@
   function renderCourseAdminActions(course) {
     return `
       <div class="card-actions" style="margin-top:10px">
-        <button class="btn ghost" data-edit-course="${course.id}">ØªØ¹Ø¯ÙŠÙ„ Ø³Ø±ÙŠØ¹</button>
-        <button class="btn ghost" data-toggle-course="${course.id}">${course.is_published === false ? "Ù†Ø´Ø±" : "Ø¥Ø®ÙØ§Ø¡"}</button>
-        <button class="btn danger" data-delete-course="${course.id}">Ø­Ø°Ù</button>
+        <button class="btn ghost" data-edit-course="${course.id}">تعديل سريع</button>
+        <button class="btn ghost" data-toggle-course="${course.id}">${course.is_published === false ? "نشر" : "إخفاء"}</button>
+        <button class="btn danger" data-delete-course="${course.id}">حذف</button>
       </div>
     `;
   }
@@ -433,13 +434,13 @@
     if (isAdmin()) return "";
     const enrollment = getEnrollment(course.id);
     if (enrollment?.status === "active") return "";
-    if (Number(course.price) <= 0) return `<button class="btn gold" data-free-course="${course.id}">Ø§Ø¨Ø¯Ø£ Ø§Ù„ÙƒÙˆØ±Ø³ Ø§Ù„Ù…Ø¬Ø§Ù†ÙŠ</button>`;
-    return `<button class="btn whatsapp" data-buy-course="${course.id}">Ø´Ø±Ø§Ø¡ Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨</button>`;
+    if (Number(course.price) <= 0) return `<button class="btn gold" data-free-course="${course.id}">ابدأ الكورس المجاني</button>`;
+    return `<button class="btn whatsapp" data-buy-course="${course.id}">شراء عبر واتساب</button>`;
   }
 
   function renderCourseDetails(courseId) {
     const course = state.data.courses.find((item) => item.id === courseId);
-    if (!course) return empty("Ø§Ù„ÙƒÙˆØ±Ø³ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.");
+    if (!course) return empty("الكورس غير موجود.");
     const sections = state.data.sections
       .filter((section) => section.courseId === course.id)
       .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -448,22 +449,22 @@
       <section>
         <div class="section-title">
           <div>
-            <button class="btn ghost" data-route="courses">Ø±Ø¬ÙˆØ¹ Ù„Ù„ÙƒÙˆØ±Ø³Ø§Øª</button>
+            <button class="btn ghost" data-route="courses">رجوع للكورسات</button>
             <h2>${escapeHtml(course.title)}</h2>
             <p class="muted">${escapeHtml(course.description)}</p>
           </div>
           <div class="row">
-            <span class="pill gold">${course.price} Ø¬Ù†ÙŠÙ‡</span>
+            <span class="pill gold">${course.price} جنيه</span>
             <span class="pill gold">${priceText(course)}</span>
             ${renderBuyButton(course)}
           </div>
         </div>
-        ${!canWatch ? `<div class="locked"><div><h3>Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª Ù…Ù‚ÙÙˆÙ„Ø©</h3><p>Ø§Ø´ØªØ± Ø§Ù„ÙƒÙˆØ±Ø³ Ø¹Ø¨Ø± ÙˆØ§ØªØ³Ø§Ø¨ØŒ ÙˆØ¨Ø¹Ø¯ Ø§Ù„ØªÙØ¹ÙŠÙ„ Ù‡ØªØ¸Ù‡Ø± Ù„Ùƒ Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª.</p></div></div>` : ""}
+        ${!canWatch ? `<div class="locked"><div><h3>الفيديوهات مقفولة</h3><p>اشتر الكورس عبر واتساب، وبعد التفعيل هتظهر لك الفيديوهات.</p></div></div>` : ""}
         ${isAdmin() ? renderSectionEditor(course.id) : ""}
         <div class="list">
           ${sections
             .map((section) => renderSectionBlock(section, canWatch))
-            .join("") || empty("Ù„Ø§ ØªÙˆØ¬Ø¯ Ø£Ù‚Ø³Ø§Ù… ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„ÙƒÙˆØ±Ø³ Ø¨Ø¹Ø¯.")}
+            .join("") || empty("لا توجد أقسام في هذا الكورس بعد.")}
         </div>
         ${renderCourseAttachments(course)}
       </section>
@@ -476,10 +477,10 @@
     return `
       <section class="section card">
         <div class="section-title">
-          <h2>Ù…Ø±ÙÙ‚Ø§Øª Ø§Ù„ÙƒÙˆØ±Ø³</h2>
-          <span class="pill">${attachments.length} Ù…Ù„Ù</span>
+          <h2>مرفقات الكورس</h2>
+          <span class="pill">${attachments.length} ملف</span>
         </div>
-        ${renderLinks("Ù…Ù„ÙØ§Øª Ø§Ù„Ø´Ø±Ø­ ÙˆØ§Ù„Ø£Ø³Ø¦Ù„Ø©", attachments)}
+        ${renderLinks("ملفات الشرح والأسئلة", attachments)}
       </section>
     `;
   }
@@ -494,13 +495,13 @@
         <div class="section-title">
           <div>
             <h3>${escapeHtml(section.title)}</h3>
-            <span class="pill">${lessons.length} ÙÙŠØ¯ÙŠÙˆ</span>
+            <span class="pill">${lessons.length} فيديو</span>
           </div>
           ${isAdmin() ? `
             <div class="row">
-              <button class="btn ghost" data-edit-section="${section.id}">ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù‚Ø³Ù…</button>
-              <label class="btn ghost file-btn">ØªØºÙŠÙŠØ± Ø§Ù„ØµÙˆØ±Ø©<input type="file" accept="image/*" data-section-image="${section.id}" /></label>
-              <button class="btn danger" data-delete-section="${section.id}">Ø­Ø°Ù Ø§Ù„Ù‚Ø³Ù…</button>
+              <button class="btn ghost" data-edit-section="${section.id}">تعديل القسم</button>
+              <label class="btn ghost file-btn">تغيير الصورة<input type="file" accept="image/*" data-section-image="${section.id}" /></label>
+              <button class="btn danger" data-delete-section="${section.id}">حذف القسم</button>
             </div>
           ` : ""}
         </div>
@@ -513,19 +514,19 @@
                 <div class="lesson-body">
                   <h3>${escapeHtml(lesson.title)}</h3>
                   <button class="btn ${canWatch ? "" : "ghost"}" ${canWatch ? `data-open-lesson="${lesson.id}"` : "disabled"}>
-                    ${canWatch ? "Ø§ÙØªØ­ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ" : "Ù…ØºÙ„Ù‚ Ù„Ø­ÙŠÙ† Ø§Ù„ØªÙØ¹ÙŠÙ„"}
+                    ${canWatch ? "افتح الفيديو" : "مغلق لحين التفعيل"}
                   </button>
                   ${isAdmin() ? `
                     <div class="card-actions" style="margin-top:10px">
-                      <button class="btn ghost" data-edit-lesson="${lesson.id}">ØªØ¹Ø¯ÙŠÙ„</button>
-                      <label class="btn ghost file-btn">ØµÙˆØ±Ø© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ<input type="file" accept="image/*" data-lesson-image="${lesson.id}" /></label>
-                      <button class="btn danger" data-delete-lesson="${lesson.id}">Ø­Ø°Ù</button>
+                      <button class="btn ghost" data-edit-lesson="${lesson.id}">تعديل</button>
+                      <label class="btn ghost file-btn">صورة الفيديو<input type="file" accept="image/*" data-lesson-image="${lesson.id}" /></label>
+                      <button class="btn danger" data-delete-lesson="${lesson.id}">حذف</button>
                     </div>
                   ` : ""}
                 </div>
               </article>
             `)
-            .join("") || empty("Ù„Ø§ ØªÙˆØ¬Ø¯ ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª ÙÙŠ Ù‡Ø°Ø§ Ø§Ù„Ù‚Ø³Ù….")}
+            .join("") || empty("لا توجد فيديوهات في هذا القسم.")}
         </div>
       </article>
     `;
@@ -533,7 +534,7 @@
 
   function renderLesson(lessonId) {
     const lesson = state.data.lessons.find((item) => item.id === lessonId);
-    if (!lesson) return empty("Ø§Ù„ÙÙŠØ¯ÙŠÙˆ ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯.");
+    if (!lesson) return empty("الفيديو غير موجود.");
     const section = state.data.sections.find((item) => item.id === lesson.sectionId);
     const course = state.data.courses.find((item) => item.id === section?.courseId);
     const canWatch = course && canAccessCourse(course.id);
@@ -542,29 +543,29 @@
       <section>
         <div class="section-title">
           <div>
-            <button class="btn ghost" data-open-course="${course?.id || ""}">Ø±Ø¬ÙˆØ¹ Ù„Ù„ÙƒÙˆØ±Ø³</button>
+            <button class="btn ghost" data-open-course="${course?.id || ""}">رجوع للكورس</button>
             <h2>${escapeHtml(lesson.title)}</h2>
           </div>
         </div>
         ${
           canWatch
             ? renderVideoPlayer(lesson)
-            : `<div class="locked"><div><h3>Ù‡Ø°Ø§ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ Ù„Ù„Ù…Ø´ØªØ±ÙƒÙŠÙ† ÙÙ‚Ø·</h3><p>ÙŠØ¬Ø¨ ØªÙØ¹ÙŠÙ„ Ø§Ø´ØªØ±Ø§ÙƒÙƒ ÙÙŠ Ø§Ù„ÙƒÙˆØ±Ø³ Ø£ÙˆÙ„Ù‹Ø§.</p></div></div>`
+            : `<div class="locked"><div><h3>هذا الفيديو للمشتركين فقط</h3><p>يجب تفعيل اشتراكك في الكورس أولًا.</p></div></div>`
         }
         <div class="grid two section">
           <div class="card">
-            <h3>Ø§Ù„Ù…Ø±ÙÙ‚Ø§Øª ÙˆØ§Ù„Ø±ÙˆØ§Ø¨Ø·</h3>
-            ${renderLinks("Ø§Ù„Ù…Ø±ÙÙ‚Ø§Øª", lesson.attachments)}
-            ${renderLinks("Ø±ÙˆØ§Ø¨Ø· Ø®Ø§Ø±Ø¬ÙŠØ©", lesson.externalLinks)}
+            <h3>المرفقات والروابط</h3>
+            ${renderLinks("المرفقات", lesson.attachments)}
+            ${renderLinks("روابط خارجية", lesson.externalLinks)}
           </div>
           <div class="card">
-            <h3>Ø§Ù„ØªØ¹Ù„ÙŠÙ‚Ø§Øª</h3>
+            <h3>التعليقات</h3>
             <form class="form" data-comment-form="${lesson.id}">
-              <textarea class="textarea" name="body" placeholder="Ø§ÙƒØªØ¨ ØªØ¹Ù„ÙŠÙ‚Ùƒ"></textarea>
-              <button class="btn" type="submit">Ø¥Ø±Ø³Ø§Ù„ ØªØ¹Ù„ÙŠÙ‚</button>
+              <textarea class="textarea" name="body" placeholder="اكتب تعليقك"></textarea>
+              <button class="btn" type="submit">إرسال تعليق</button>
             </form>
             <div class="list" style="margin-top:12px">
-              ${comments.map(renderComment).join("") || `<p class="muted">Ù„Ø§ ØªÙˆØ¬Ø¯ ØªØ¹Ù„ÙŠÙ‚Ø§Øª Ø¨Ø¹Ø¯.</p>`}
+              ${comments.map(renderComment).join("") || `<p class="muted">لا توجد تعليقات بعد.</p>`}
             </div>
           </div>
         </div>
@@ -577,11 +578,11 @@
     return `
       <section>
         <div class="section-title">
-          <h2>Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª</h2>
-          <input class="search" data-search placeholder="Ø§Ø¨Ø­Ø« ÙÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª" value="${escapeAttr(state.search)}" />
+          <h2>المنشورات</h2>
+          <input class="search" data-search placeholder="ابحث في المنشورات" value="${escapeAttr(state.search)}" />
         </div>
         ${isAdmin() ? renderPostComposer() : ""}
-        <div class="grid two">${posts.map(renderPostCard).join("") || empty("Ù„Ø§ ØªÙˆØ¬Ø¯ Ù…Ù†Ø´ÙˆØ±Ø§Øª Ù…Ø·Ø§Ø¨Ù‚Ø©.")}</div>
+        <div class="grid two">${posts.map(renderPostCard).join("") || empty("لا توجد منشورات مطابقة.")}</div>
       </section>
     `;
   }
@@ -592,16 +593,16 @@
       <article class="post-card">
         ${post.image_url ? `<div class="post-image" style="${bg(post.image_url)}"></div>` : ""}
         <div class="post-body">
-          <span class="pill gold">Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ</span>
+          <span class="pill gold">مستر عماد حمدي</span>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.body)}</p>
           <div class="row">
-            <span class="muted">${comments.length} ØªØ¹Ù„ÙŠÙ‚</span>
+            <span class="muted">${comments.length} تعليق</span>
             <span class="muted">${formatDate(post.created_at)}</span>
           </div>
           <form class="form" data-post-comment-form="${post.id}" style="margin-top:12px">
-            <input class="field" name="body" placeholder="Ø§ÙƒØªØ¨ ØªØ¹Ù„ÙŠÙ‚ Ø¹Ù„Ù‰ Ø§Ù„Ù…Ù†Ø´ÙˆØ±" />
-            <button class="btn ghost" type="submit">ØªØ¹Ù„ÙŠÙ‚</button>
+            <input class="field" name="body" placeholder="اكتب تعليق على المنشور" />
+            <button class="btn ghost" type="submit">تعليق</button>
           </form>
           ${isAdmin() ? renderPostAdminActions(post) : ""}
         </div>
@@ -612,9 +613,9 @@
   function renderPostAdminActions(post) {
     return `
       <div class="card-actions" style="margin-top:10px">
-        <button class="btn ghost" data-edit-post="${post.id}">ØªØ¹Ø¯ÙŠÙ„ Ø³Ø±ÙŠØ¹</button>
-        <button class="btn ghost" data-toggle-post="${post.id}">${post.is_published === false ? "Ù†Ø´Ø±" : "Ø¥Ø®ÙØ§Ø¡"}</button>
-        <button class="btn danger" data-delete-post="${post.id}">Ø­Ø°Ù</button>
+        <button class="btn ghost" data-edit-post="${post.id}">تعديل سريع</button>
+        <button class="btn ghost" data-toggle-post="${post.id}">${post.is_published === false ? "نشر" : "إخفاء"}</button>
+        <button class="btn danger" data-delete-post="${post.id}">حذف</button>
       </div>
     `;
   }
@@ -624,21 +625,21 @@
       <section>
         <div class="section-title">
           <div>
-            <h2>Ø§Ù„Ø´ÙƒØ§ÙˆÙ‰ ÙˆØ§Ù„Ø¯Ø¹Ù…</h2>
-            <p class="muted">Ø§ÙƒØªØ¨ Ø±Ø³Ø§Ù„ØªÙƒ ÙˆØ³ÙŠØªÙ… Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹Ùƒ ÙÙŠ Ø£Ù‚Ø±Ø¨ ÙˆÙ‚Øª.</p>
+            <h2>الشكاوى والدعم</h2>
+            <p class="muted">اكتب رسالتك وسيتم التواصل معك في أقرب وقت.</p>
           </div>
         </div>
         <div class="grid two">
           <form class="card form" data-support-form>
-            <label>Ø§Ù„Ø§Ø³Ù…<input class="field" name="name" required value="${escapeAttr(state.profile.full_name)}" /></label>
-            <label>Ø§Ù„Ø¨Ø±ÙŠØ¯<input class="field" name="email" type="email" required value="${escapeAttr(state.profile.email)}" /></label>
-            <label>Ø±Ø³Ø§Ù„ØªÙƒ<textarea class="textarea" name="message" required></textarea></label>
-            <button class="btn gold" type="submit">Ø¥Ø±Ø³Ø§Ù„</button>
+            <label>الاسم<input class="field" name="name" required value="${escapeAttr(state.profile.full_name)}" /></label>
+            <label>البريد<input class="field" name="email" type="email" required value="${escapeAttr(state.profile.email)}" /></label>
+            <label>رسالتك<textarea class="textarea" name="message" required></textarea></label>
+            <button class="btn gold" type="submit">إرسال</button>
           </form>
           <div class="card">
-            <h3>ÙˆØ³Ø§Ø¦Ù„ Ø§Ù„ØªÙˆØ§ØµÙ„</h3>
-            <p class="muted">Ù„Ø´Ø±Ø§Ø¡ Ø§Ù„ÙƒÙˆØ±Ø³Ø§Øª Ø£Ùˆ Ø§Ù„Ø§Ø³ØªÙØ³Ø§Ø± Ø§Ù„Ø³Ø±ÙŠØ¹ Ø§Ø³ØªØ®Ø¯Ù… ÙˆØ§ØªØ³Ø§Ø¨.</p>
-            <a class="btn whatsapp" href="${whatsappGeneralLink()}" target="_blank" rel="noreferrer">ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨</a>
+            <h3>وسائل التواصل</h3>
+            <p class="muted">لشراء الكورسات أو الاستفسار السريع استخدم واتساب.</p>
+            <a class="btn whatsapp" href="${whatsappGeneralLink()}" target="_blank" rel="noreferrer">فتح واتساب</a>
           </div>
         </div>
         ${isAdmin() ? renderSupportInbox() : ""}
@@ -650,12 +651,12 @@
     return `
       <section>
         <div class="section-title">
-          <h2>Ø§Ù„Ù…Ø²ÙŠØ¯</h2>
-          <button class="btn danger" data-logout>ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ø®Ø±ÙˆØ¬</button>
+          <h2>المزيد</h2>
+          <button class="btn danger" data-logout>تسجيل الخروج</button>
         </div>
         <div class="grid two">
           <div class="card">
-            <h3>Ù…ÙƒØªØ¨ØªÙŠ</h3>
+            <h3>مكتبتي</h3>
             <div class="list" style="margin-top:12px">
               ${state.data.enrollments
                 .filter((enrollment) => enrollment.user_id === state.user.id || enrollment.userId === state.user.id)
@@ -665,13 +666,13 @@
                     ? `<div class="list-item"><strong>${escapeHtml(course.title)}</strong><span class="pill">${statusLabel(enrollment.status)}</span></div>`
                     : "";
                 })
-                .join("") || empty("Ù„Ø§ ØªÙˆØ¬Ø¯ ÙƒÙˆØ±Ø³Ø§Øª ÙÙŠ Ù…ÙƒØªØ¨ØªÙƒ Ø¨Ø¹Ø¯.")}
+                .join("") || empty("لا توجد كورسات في مكتبتك بعد.")}
             </div>
           </div>
           <div class="card">
-            <h3>ÙˆØµÙ Ø§Ù„Ù…Ù†ØµØ©</h3>
-            <p>Ù…Ù†ØµØ© ØªØ¹Ù„ÙŠÙ…ÙŠØ© Ù„Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ Ù„Ø´Ø±Ø­ Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ù„Ø¬ØºØ±Ø§ÙÙŠØ§ Ø¨Ø£Ø³Ù„ÙˆØ¨ Ù…Ù†Ø¸Ù… ÙˆØ³Ù‡Ù„ØŒ Ù…Ø¹ ÙƒÙˆØ±Ø³Ø§Øª Ù…Ø¯ÙÙˆØ¹Ø© ÙŠØªÙ… ØªÙØ¹ÙŠÙ„Ù‡Ø§ ÙŠØ¯ÙˆÙŠÙ‹Ø§ Ø¨Ø¹Ø¯ Ø§Ù„ØªÙˆØ§ØµÙ„.</p>
-            <button class="btn ghost" data-share>Ù…Ø´Ø§Ø±ÙƒØ© Ø§Ù„Ù…ÙˆÙ‚Ø¹</button>
+            <h3>وصف المنصة</h3>
+            <p>منصة تعليمية لمستر عماد حمدي لشرح التاريخ والجغرافيا بأسلوب منظم وسهل، مع كورسات مدفوعة يتم تفعيلها يدويًا بعد التواصل.</p>
+            <button class="btn ghost" data-share>مشاركة الموقع</button>
           </div>
         </div>
         ${isAdmin() ? renderAdminSettings() : ""}
@@ -683,8 +684,8 @@
     return `
       <section class="section admin-box">
         <div class="section-title">
-          <h2>Ø£Ø¯ÙˆØ§Øª Ø§Ù„Ù…Ø¯Ø±Ø³ Ø§Ù„Ø³Ø±ÙŠØ¹Ø©</h2>
-          <span class="pill gold">ØªØ¸Ù‡Ø± Ù„Ù„Ù…Ø¯Ø±Ø³ ÙÙ‚Ø·</span>
+          <h2>أدوات المدرس السريعة</h2>
+          <span class="pill gold">تظهر للمدرس فقط</span>
         </div>
         <div class="grid two">
           ${renderEnrollmentManager()}
@@ -699,33 +700,33 @@
       <div class="admin-box course-composer">
         <div class="section-title">
           <div>
-            <h3>Ø¥Ø¶Ø§ÙØ© ÙƒÙˆØ±Ø³ Ø¬Ø¯ÙŠØ¯</h3>
-            <p class="muted">Ø§Ù…Ù„Ø£ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„ÙƒÙˆØ±Ø³ØŒ ÙˆÙ„Ùˆ Ø£Ø¶ÙØª Ø±Ø§Ø¨Ø· ÙÙŠØ¯ÙŠÙˆ Ø³ÙŠØªÙ… Ø¥Ù†Ø´Ø§Ø¡ Ù‚Ø³Ù… ÙˆÙÙŠØ¯ÙŠÙˆ Ø£ÙˆÙ„ ØªÙ„Ù‚Ø§Ø¦ÙŠÙ‹Ø§ Ø¯Ø§Ø®Ù„ Ø§Ù„ÙƒÙˆØ±Ø³.</p>
+            <h3>إضافة كورس جديد</h3>
+            <p class="muted">املأ بيانات الكورس، ولو أضفت رابط فيديو سيتم إنشاء قسم وفيديو أول تلقائيًا داخل الكورس.</p>
           </div>
         </div>
         <form class="form" data-course-form>
           <div class="admin-grid">
-            <label>Ø§Ø³Ù… Ø§Ù„ÙƒÙˆØ±Ø³<input class="field" name="title" required placeholder="Ù…Ø«Ø§Ù„: ØªØ§Ø±ÙŠØ® Ø§Ù„ØµÙ Ø§Ù„Ø«Ø§Ù„Ø« Ø§Ù„Ø«Ø§Ù†ÙˆÙŠ" /></label>
-            <label>Ø§Ù„ØµÙ Ø§Ù„Ø¯Ø±Ø§Ø³ÙŠ Ø§Ø®ØªÙŠØ§Ø±ÙŠ<input class="field" name="grade" placeholder="Ù…Ø«Ø§Ù„: Ø§Ù„Ø«Ø§Ù„Ø« Ø§Ù„Ø«Ø§Ù†ÙˆÙŠ" /></label>
-            <label>Ù†ÙˆØ¹ Ø§Ù„ÙƒÙˆØ±Ø³
+            <label>اسم الكورس<input class="field" name="title" required placeholder="مثال: تاريخ الصف الثالث الثانوي" /></label>
+            <label>الصف الدراسي اختياري<input class="field" name="grade" placeholder="مثال: الثالث الثانوي" /></label>
+            <label>نوع الكورس
               <select class="select" name="accessType" data-access-type>
-                <option value="free">Ù…Ø¬Ø§Ù†ÙŠ</option>
-                <option value="paid">Ù…Ø¯ÙÙˆØ¹</option>
+                <option value="free">مجاني</option>
+                <option value="paid">مدفوع</option>
               </select>
             </label>
-            <label data-price-field>Ø§Ù„Ø³Ø¹Ø± Ø¨Ø§Ù„Ø¬Ù†ÙŠÙ‡<input class="field" name="price" type="number" min="0" placeholder="Ù…Ø«Ø§Ù„: 500" /></label>
+            <label data-price-field>السعر بالجنيه<input class="field" name="price" type="number" min="0" placeholder="مثال: 500" /></label>
           </div>
-          <label>ÙˆØµÙ Ø§Ù„ÙƒÙˆØ±Ø³<textarea class="textarea" name="description" required placeholder="Ø§ÙƒØªØ¨ ÙˆØµÙ Ù…Ø®ØªØµØ± Ù„Ù„Ø·Ù„Ø§Ø¨"></textarea></label>
+          <label>وصف الكورس<textarea class="textarea" name="description" required placeholder="اكتب وصف مختصر للطلاب"></textarea></label>
           <div class="admin-grid">
-            <label>Ø±Ø§Ø¨Ø· ÙÙŠØ¯ÙŠÙˆ Ø§Ù„ÙƒÙˆØ±Ø³<input class="field" name="courseUrl" placeholder="YouTube Ø£Ùˆ Vimeo" /></label>
-            <label>ØµÙˆØ±Ø© ØºÙ„Ø§Ù Ù…Ù† Ø§Ù„Ø¬Ù‡Ø§Ø²<input class="field" name="imageFile" type="file" accept="image/*" /></label>
-            <label>Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© ØºÙ„Ø§Ù Ø§Ø®ØªÙŠØ§Ø±ÙŠ<input class="field" name="imageUrl" placeholder="https://..." /></label>
+            <label>رابط فيديو الكورس<input class="field" name="courseUrl" placeholder="YouTube أو Vimeo" /></label>
+            <label>صورة غلاف من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+            <label>رابط صورة غلاف اختياري<input class="field" name="imageUrl" placeholder="https://..." /></label>
           </div>
           <div class="admin-grid">
-            <label>Ù…Ù„Ù Ø´Ø±Ø­ PDF<input class="field" name="explanationFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" /></label>
-            <label>Ù…Ù„Ù Ø£Ø³Ø¦Ù„Ø© Ø£Ùˆ ÙˆØ§Ø¬Ø¨<input class="field" name="questionsFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></label>
+            <label>ملف شرح PDF<input class="field" name="explanationFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" /></label>
+            <label>ملف أسئلة أو واجب<input class="field" name="questionsFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></label>
           </div>
-          <button class="btn gold" type="submit">Ø¥Ù†Ø´Ø§Ø¡ Ø§Ù„ÙƒÙˆØ±Ø³</button>
+          <button class="btn gold" type="submit">إنشاء الكورس</button>
         </form>
       </div>
     `;
@@ -734,11 +735,11 @@
   function renderSectionEditor(courseId) {
     return `
       <div class="admin-box">
-        <h3>Ø¥Ø¶Ø§ÙØ© Ù‚Ø³Ù… Ù„Ù„ÙƒÙˆØ±Ø³</h3>
+        <h3>إضافة قسم للكورس</h3>
         <form class="form admin-grid" data-section-form="${courseId}">
-          <label>Ø§Ø³Ù… Ø§Ù„Ù‚Ø³Ù…<input class="field" name="title" required placeholder="Ù…Ø«Ø§Ù„: Ø§Ù„ÙØµÙ„ Ø§Ù„Ø£ÙˆÙ„" /></label>
-          <label>ØµÙˆØ±Ø© Ø§Ù„Ù‚Ø³Ù… Ù…Ù† Ø§Ù„Ø¬Ù‡Ø§Ø²<input class="field" name="imageFile" type="file" accept="image/*" /></label>
-          <button class="btn gold" type="submit">Ø¥Ø¶Ø§ÙØ© Ù‚Ø³Ù…</button>
+          <label>اسم القسم<input class="field" name="title" required placeholder="مثال: الفصل الأول" /></label>
+          <label>صورة القسم من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+          <button class="btn gold" type="submit">إضافة قسم</button>
         </form>
       </div>
     `;
@@ -747,14 +748,14 @@
   function renderLessonEditor(sectionId) {
     return `
       <div class="admin-box">
-        <h3>Ø¥Ø¶Ø§ÙØ© ÙÙŠØ¯ÙŠÙˆ</h3>
+        <h3>إضافة فيديو</h3>
         <form class="form admin-grid" data-lesson-form="${sectionId}">
-          <input class="field" name="title" required placeholder="Ø¹Ù†ÙˆØ§Ù† Ø§Ù„ÙÙŠØ¯ÙŠÙˆ" />
-          <input class="field" name="videoUrl" required placeholder="Ø±Ø§Ø¨Ø· YouTube Ø£Ùˆ Vimeo" />
-          <label>ØµÙˆØ±Ø© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ Ù…Ù† Ø§Ù„Ø¬Ù‡Ø§Ø²<input class="field" name="thumbnailFile" type="file" accept="image/*" /></label>
-          <input class="field" name="thumbnailUrl" placeholder="Ø£Ùˆ Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© Ù…ØµØºØ±Ø©" />
-          <input class="field" name="externalLink" placeholder="Ø±Ø§Ø¨Ø· Ø®Ø§Ø±Ø¬ÙŠ Ø§Ø®ØªÙŠØ§Ø±ÙŠ" />
-          <button class="btn gold" type="submit">Ø¥Ø¶Ø§ÙØ© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ</button>
+          <input class="field" name="title" required placeholder="عنوان الفيديو" />
+          <input class="field" name="videoUrl" required placeholder="رابط YouTube أو Vimeo" />
+          <label>صورة الفيديو من الجهاز<input class="field" name="thumbnailFile" type="file" accept="image/*" /></label>
+          <input class="field" name="thumbnailUrl" placeholder="أو رابط صورة مصغرة" />
+          <input class="field" name="externalLink" placeholder="رابط خارجي اختياري" />
+          <button class="btn gold" type="submit">إضافة الفيديو</button>
         </form>
       </div>
     `;
@@ -763,12 +764,12 @@
   function renderPostEditor() {
     return `
       <div class="admin-box">
-        <h3>Ø¥Ø¶Ø§ÙØ© Ù…Ù†Ø´ÙˆØ±</h3>
+        <h3>إضافة منشور</h3>
         <form class="form admin-grid" data-post-form>
-          <input class="field" name="title" required placeholder="Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ù…Ù†Ø´ÙˆØ±" />
-          <input class="field" name="imageUrl" placeholder="Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø©" />
-          <textarea class="textarea" name="body" required placeholder="Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ù…Ù†Ø´ÙˆØ±"></textarea>
-          <button class="btn gold" type="submit">Ù†Ø´Ø±</button>
+          <input class="field" name="title" required placeholder="عنوان المنشور" />
+          <input class="field" name="imageUrl" placeholder="رابط صورة" />
+          <textarea class="textarea" name="body" required placeholder="محتوى المنشور"></textarea>
+          <button class="btn gold" type="submit">نشر</button>
         </form>
       </div>
     `;
@@ -780,18 +781,18 @@
         <div class="post-header">
           <div class="avatar">${logoSvg("avatar-logo")}</div>
           <div>
-            <h3>Ø§ÙƒØªØ¨ Ø¨ÙˆØ³Øª Ø¬Ø¯ÙŠØ¯</h3>
-            <span class="muted">Ø§ÙƒØªØ¨ Ù…Ù†Ø´ÙˆØ± ÙˆØ§Ø±ÙØ¹ ØµÙˆØ±Ø© Ù…Ù† Ø§Ù„Ø¬Ù‡Ø§Ø² Ø£Ùˆ Ø§Ø³ØªØ®Ø¯Ù… Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø©.</span>
+            <h3>اكتب بوست جديد</h3>
+            <span class="muted">اكتب منشور وارفع صورة من الجهاز أو استخدم رابط صورة.</span>
           </div>
         </div>
         <form class="form" data-post-form>
-          <input class="field" name="title" required placeholder="Ø¹Ù†ÙˆØ§Ù† Ù…Ø®ØªØµØ± Ù„Ù„Ø¨ÙˆØ³Øª" />
-          <textarea class="textarea" name="body" required placeholder="Ø§ÙƒØªØ¨ Ø§Ù„Ù…Ù†Ø´ÙˆØ± Ù‡Ù†Ø§..."></textarea>
+          <input class="field" name="title" required placeholder="عنوان مختصر للبوست" />
+          <textarea class="textarea" name="body" required placeholder="اكتب المنشور هنا..."></textarea>
           <div class="admin-grid">
-            <label>ØµÙˆØ±Ø© Ù…Ù† Ø§Ù„Ø¬Ù‡Ø§Ø²<input class="field" name="imageFile" type="file" accept="image/*" /></label>
-            <label>Ø£Ùˆ Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø©<input class="field" name="imageUrl" placeholder="https://..." /></label>
+            <label>صورة من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+            <label>أو رابط صورة<input class="field" name="imageUrl" placeholder="https://..." /></label>
           </div>
-          <button class="btn gold" type="submit">Ù†Ø´Ø± Ø§Ù„Ø¨ÙˆØ³Øª</button>
+          <button class="btn gold" type="submit">نشر البوست</button>
         </form>
       </div>
     `;
@@ -801,7 +802,7 @@
     const pending = state.data.enrollments.filter((item) => item.status === "pending");
     return `
       <div class="card">
-        <h3>Ø·Ù„Ø¨Ø§Øª Ø§Ù„ØªÙØ¹ÙŠÙ„</h3>
+        <h3>طلبات التفعيل</h3>
         <div class="list" style="margin-top:12px">
           ${pending
             .map((item) => {
@@ -810,66 +811,66 @@
               return `
                 <div class="list-item">
                   <div>
-                    <strong>${escapeHtml(profile?.full_name || "Ø·Ø§Ù„Ø¨")}</strong>
-                    <span class="muted">${escapeHtml(course?.title || "ÙƒÙˆØ±Ø³")}</span>
+                    <strong>${escapeHtml(profile?.full_name || "طالب")}</strong>
+                    <span class="muted">${escapeHtml(course?.title || "كورس")}</span>
                   </div>
                   <div class="row">
-                    <button class="btn" data-enroll-status="${item.id}:active">ØªÙØ¹ÙŠÙ„</button>
-                    <button class="btn danger" data-enroll-status="${item.id}:rejected">Ø±ÙØ¶</button>
+                    <button class="btn" data-enroll-status="${item.id}:active">تفعيل</button>
+                    <button class="btn danger" data-enroll-status="${item.id}:rejected">رفض</button>
                   </div>
                 </div>
               `;
             })
-            .join("") || `<p class="muted">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø·Ù„Ø¨Ø§Øª Ø­Ø§Ù„ÙŠØ©.</p>`}
+            .join("") || `<p class="muted">لا توجد طلبات حالية.</p>`}
         </div>
       </div>
     `;
   }
 
   function renderStudentsAdmin() {
-    if (!isAdmin()) return empty("Ù‡Ø°Ù‡ Ø§Ù„ØµÙØ­Ø© Ù…Ø®ØµØµØ© Ù„Ù„Ù…Ø¯Ø±Ø³ ÙÙ‚Ø·.");
+    if (!isAdmin()) return empty("هذه الصفحة مخصصة للمدرس فقط.");
     const students = state.data.profiles.filter((profile) => profile.role !== "admin");
     return `
       <section>
         <div class="section-title">
           <div>
-            <h2>Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø·Ù„Ø§Ø¨ ÙˆØ§Ù„Ø­Ø³Ø§Ø¨Ø§Øª</h2>
-            <p class="muted">Ø¨Ø¹Ø¯ Ù…Ø§ Ø§Ù„Ø·Ø§Ù„Ø¨ ÙŠØ¯ÙØ¹ØŒ Ø§Ø®ØªØ§Ø± Ø§Ø³Ù…Ù‡ ÙˆØ§Ù„ÙƒÙˆØ±Ø³ ÙˆØ§Ø¶ØºØ· Ø­ÙØ¸ Ø¨Ø­Ø§Ù„Ø© Ù…ÙØ¹Ù„.</p>
+            <h2>إدارة الطلاب والحسابات</h2>
+            <p class="muted">بعد ما الطالب يدفع، اختار اسمه والكورس واضغط حفظ بحالة مفعل.</p>
           </div>
         </div>
         <div class="grid two">
           <form class="card form" data-manual-enrollment-form>
-            <h3>ØªÙØ¹ÙŠÙ„ ÙƒÙˆØ±Ø³ Ù„Ø·Ø§Ù„Ø¨</h3>
-            <label>Ø§Ù„Ø·Ø§Ù„Ø¨
+            <h3>تفعيل كورس لطالب</h3>
+            <label>الطالب
               <select class="select" name="userId" required>
-                <option value="">Ø§Ø®ØªØ± Ø§Ù„Ø·Ø§Ù„Ø¨</option>
+                <option value="">اختر الطالب</option>
                 ${students.map((student) => `<option value="${student.id}">${escapeHtml(student.full_name)} - ${escapeHtml(student.email)}</option>`).join("")}
               </select>
             </label>
-            <label>Ø§Ù„ÙƒÙˆØ±Ø³
+            <label>الكورس
               <select class="select" name="courseId" required>
-                <option value="">Ø§Ø®ØªØ± Ø§Ù„ÙƒÙˆØ±Ø³</option>
+                <option value="">اختر الكورس</option>
                 ${state.data.courses.map((course) => `<option value="${course.id}">${escapeHtml(course.title)} - ${priceText(course)}</option>`).join("")}
               </select>
             </label>
-            <label>Ø§Ù„Ø­Ø§Ù„Ø©
+            <label>الحالة
               <select class="select" name="status" required>
-                <option value="active">Ù…ÙØ¹Ù„</option>
-                <option value="pending">Ø¨Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„Ø¯ÙØ¹</option>
-                <option value="rejected">Ù…Ø±ÙÙˆØ¶</option>
+                <option value="active">مفعل</option>
+                <option value="pending">بانتظار الدفع</option>
+                <option value="rejected">مرفوض</option>
               </select>
             </label>
-            <button class="btn gold" type="submit">Ø­ÙØ¸ Ø­Ø§Ù„Ø© Ø§Ù„ÙƒÙˆØ±Ø³</button>
+            <button class="btn gold" type="submit">حفظ حالة الكورس</button>
           </form>
           ${renderEnrollmentManager()}
         </div>
         <section class="section">
           <div class="section-title">
-            <h2>ÙƒÙ„ Ø§Ù„Ø·Ù„Ø§Ø¨</h2>
-            <span class="pill">${students.length} Ø·Ø§Ù„Ø¨</span>
+            <h2>كل الطلاب</h2>
+            <span class="pill">${students.length} طالب</span>
           </div>
           <div class="list">
-            ${students.map(renderStudentRow).join("") || empty("Ù„Ø§ ÙŠÙˆØ¬Ø¯ Ø·Ù„Ø§Ø¨ Ø¨Ø¹Ø¯.")}
+            ${students.map(renderStudentRow).join("") || empty("لا يوجد طلاب بعد.")}
           </div>
         </section>
       </section>
@@ -878,22 +879,22 @@
 
   function renderStudentRow(student) {
     const enrollments = state.data.enrollments.filter((item) => (item.user_id || item.userId) === student.id);
-    const passwordText = student.login_password || "ØºÙŠØ± Ù…Ø³Ø¬Ù„ - Ø§Ø¹Ù…Ù„ Reset Password";
+    const passwordText = student.login_password || "غير مسجل - اعمل Reset Password";
     return `
       <div class="list-item student-row">
         <div class="student-info">
           <strong>${escapeHtml(student.full_name)}</strong>
-          <span class="muted">Ø§Ù„ÙŠÙˆØ²Ø±: ${escapeHtml(student.email)}</span>
+          <span class="muted">اليوزر: ${escapeHtml(student.email)}</span>
           <span class="muted">ID: ${escapeHtml(student.id)}</span>
-          <span class="pill gold">Ø§Ù„Ø¨Ø§Ø³ÙˆØ±Ø¯: ${escapeHtml(passwordText)}</span>
+          <span class="pill gold">الباسورد: ${escapeHtml(passwordText)}</span>
         </div>
         <div class="student-courses">
           ${enrollments
             .map((enrollment) => {
               const course = state.data.courses.find((item) => item.id === (enrollment.course_id || enrollment.courseId));
-              return `<span class="pill ${enrollment.status === "active" ? "" : "gold"}">${escapeHtml(course?.title || "ÙƒÙˆØ±Ø³")} - ${statusLabel(enrollment.status)}</span>`;
+              return `<span class="pill ${enrollment.status === "active" ? "" : "gold"}">${escapeHtml(course?.title || "كورس")} - ${statusLabel(enrollment.status)}</span>`;
             })
-            .join("") || `<span class="muted">Ù„Ø§ ØªÙˆØ¬Ø¯ ÙƒÙˆØ±Ø³Ø§Øª Ù„Ù‡Ø°Ø§ Ø§Ù„Ø·Ø§Ù„Ø¨.</span>`}
+            .join("") || `<span class="muted">لا توجد كورسات لهذا الطالب.</span>`}
         </div>
       </div>
     `;
@@ -903,7 +904,7 @@
     const messages = compact ? state.data.supportMessages.slice(0, 3) : state.data.supportMessages;
     return `
       <div class="${compact ? "card" : "admin-box section"}">
-        <h3>Ø±Ø³Ø§Ø¦Ù„ Ø§Ù„Ø¯Ø¹Ù…</h3>
+        <h3>رسائل الدعم</h3>
         <div class="list" style="margin-top:12px">
           ${messages
             .map((message) => `
@@ -912,10 +913,10 @@
                   <strong>${escapeHtml(message.name)}</strong>
                   <p class="muted">${escapeHtml(message.message)}</p>
                 </div>
-                <span class="pill ${message.status === "closed" ? "" : "gold"}">${message.status === "closed" ? "Ù…ØºÙ„Ù‚Ø©" : "Ù…ÙØªÙˆØ­Ø©"}</span>
+                <span class="pill ${message.status === "closed" ? "" : "gold"}">${message.status === "closed" ? "مغلقة" : "مفتوحة"}</span>
               </div>
             `)
-            .join("") || `<p class="muted">Ù„Ø§ ØªÙˆØ¬Ø¯ Ø±Ø³Ø§Ø¦Ù„ Ø¯Ø¹Ù….</p>`}
+            .join("") || `<p class="muted">لا توجد رسائل دعم.</p>`}
         </div>
       </div>
     `;
@@ -925,20 +926,20 @@
     return `
       <section class="section admin-box">
         <div class="section-title">
-          <h2>Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„Ù…Ø¯Ø±Ø³</h2>
-          <span class="pill gold">ØªØºÙŠÙŠØ± Ø­Ø³Ø§Ø¨ Ø§Ù„Ø£Ø¯Ù…Ù†</span>
+          <h2>إعدادات المدرس</h2>
+          <span class="pill gold">تغيير حساب الأدمن</span>
         </div>
         <div class="grid two">
           <form class="form card" data-admin-promote-form>
-            <h3>ØªØ±Ù‚ÙŠØ© Ù…Ø³ØªØ®Ø¯Ù… Ø¥Ù„Ù‰ Ù…Ø¯Ø±Ø³</h3>
-            <input class="field" name="email" type="email" required placeholder="Ø¨Ø±ÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…" />
-            <button class="btn gold" type="submit">ØªØ¹ÙŠÙŠÙ† ÙƒÙ€ admin</button>
+            <h3>ترقية مستخدم إلى مدرس</h3>
+            <input class="field" name="email" type="email" required placeholder="بريد المستخدم" />
+            <button class="btn gold" type="submit">تعيين كـ admin</button>
           </form>
           <form class="form card" data-admin-demote-form>
-            <h3>Ø¥Ø²Ø§Ù„Ø© ØµÙ„Ø§Ø­ÙŠØ© Ù…Ø¯Ø±Ø³</h3>
-            <input class="field" name="email" type="email" required placeholder="Ø¨Ø±ÙŠØ¯ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…" />
-            <button class="btn danger" type="submit">Ø¥Ø²Ø§Ù„Ø© Ø§Ù„ØµÙ„Ø§Ø­ÙŠØ©</button>
-            <p class="muted">Ù„Ù† ÙŠØ³Ù…Ø­ Ø§Ù„Ù†Ø¸Ø§Ù… Ø¨Ø¥Ø²Ø§Ù„Ø© Ø¢Ø®Ø± Ø­Ø³Ø§Ø¨ admin.</p>
+            <h3>إزالة صلاحية مدرس</h3>
+            <input class="field" name="email" type="email" required placeholder="بريد المستخدم" />
+            <button class="btn danger" type="submit">إزالة الصلاحية</button>
+            <p class="muted">لن يسمح النظام بإزالة آخر حساب admin.</p>
           </form>
         </div>
       </section>
@@ -946,12 +947,12 @@
   }
 
   function renderLinks(title, links) {
-    if (!links || !links.length) return `<p class="muted">${title}: Ù„Ø§ ÙŠÙˆØ¬Ø¯</p>`;
+    if (!links || !links.length) return `<p class="muted">${title}: لا يوجد</p>`;
     return `
       <h4>${title}</h4>
       <div class="list">
         ${links
-          .map((link) => `<a class="btn ghost" href="${escapeAttr(link.url || link)}" target="_blank" rel="noreferrer">${escapeHtml(link.label || "ÙØªØ­ Ø§Ù„Ø±Ø§Ø¨Ø·")}</a>`)
+          .map((link) => `<a class="btn ghost" href="${escapeAttr(link.url || link)}" target="_blank" rel="noreferrer">${escapeHtml(link.label || "فتح الرابط")}</a>`)
           .join("")}
       </div>
     `;
@@ -962,12 +963,12 @@
       return `
         <div class="video-box video-protected video-message">
           <div>
-            <h3>Ø§Ù„ÙÙŠØ¯ÙŠÙˆ ÙŠØ­ØªØ§Ø¬ ØªØ´ØºÙŠÙ„ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù…Ù† Ø±Ø§Ø¨Ø· Ù…Ø­Ù„ÙŠ</h3>
-            <p>ÙŠÙˆØªÙŠÙˆØ¨ ÙŠØ±ÙØ¶ Ø£Ø­ÙŠØ§Ù†Ù‹Ø§ ØªØ´ØºÙŠÙ„ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ Ø¯Ø§Ø®Ù„ iframe Ø¹Ù†Ø¯Ù…Ø§ ÙŠÙƒÙˆÙ† Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ù…ÙØªÙˆØ­Ù‹Ø§ ÙƒÙ…Ù„Ù file://ØŒ Ù„Ø°Ù„Ùƒ ÙŠØ¸Ù‡Ø± Error 153. Ø§ÙØªØ­ Ø±Ø§Ø¨Ø· Ø§Ù„Ø³ÙŠØ±ÙØ± Ø§Ù„Ù…Ø­Ù„ÙŠ Ø§Ù„Ø°ÙŠ Ø³Ø£Ø¹Ø·ÙŠÙ‡ Ù„Ùƒ Ø¨Ø¯Ù„ ÙØªØ­ index.html Ù…Ø¨Ø§Ø´Ø±Ø©.</p>
+            <h3>الفيديو يحتاج تشغيل الموقع من رابط محلي</h3>
+            <p>يوتيوب يرفض أحيانًا تشغيل الفيديو داخل iframe عندما يكون الموقع مفتوحًا كملف file://، لذلك يظهر Error 153. افتح رابط السيرفر المحلي الذي سأعطيه لك بدل فتح index.html مباشرة.</p>
           </div>
           <span class="video-watermark">${escapeHtml(state.profile.full_name)} - ${escapeHtml(state.profile.email)}</span>
         </div>
-        <p class="muted protection-note">Ø¹Ù†Ø¯ Ø±ÙØ¹ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø¹Ù„Ù‰ Netlify Ø£Ùˆ ÙØªØ­Ù‡ Ø¹Ø¨Ø± http://localhost Ø³ÙŠØ¹Ù…Ù„ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ù†ØµØ©.</p>
+        <p class="muted protection-note">عند رفع الموقع على Netlify أو فتحه عبر http://localhost سيعمل الفيديو داخل المنصة.</p>
       `;
     }
 
@@ -976,7 +977,7 @@
         <iframe src="${embedUrl(lesson.videoUrl)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="${escapeAttr(lesson.title)}"></iframe>
         <span class="video-watermark">${escapeHtml(state.profile.full_name)} - ${escapeHtml(state.profile.email)}</span>
       </div>
-      <p class="muted protection-note">Ø§Ù„ÙÙŠØ¯ÙŠÙˆ Ø¹Ù„ÙŠÙ‡ Ø¹Ù„Ø§Ù…Ø© Ù…Ø§Ø¦ÙŠØ© Ø¨Ø§Ø³Ù… Ø§Ù„Ø­Ø³Ø§Ø¨. Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¶Ù…Ø§Ù† Ù…Ù†Ø¹ ØªØµÙˆÙŠØ± Ø§Ù„Ø´Ø§Ø´Ø© 100% Ù…Ù† Ø§Ù„Ù…ØªØµÙØ­ØŒ Ù„ÙƒÙ† Ø£ÙŠ Ù…Ø´Ø§Ø±ÙƒØ© ØºÙŠØ± Ù…ØµØ±Ø­ Ø¨Ù‡Ø§ Ø³ØªÙƒÙˆÙ† ÙˆØ§Ø¶Ø­Ø© Ù…Ù† Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø­Ø³Ø§Ø¨.</p>
+      <p class="muted protection-note">الفيديو عليه علامة مائية باسم الحساب. لا يمكن ضمان منع تصوير الشاشة 100% من المتصفح، لكن أي مشاركة غير مصرح بها ستكون واضحة من بيانات الحساب.</p>
     `;
   }
 
@@ -985,7 +986,7 @@
     return `
       <div class="list-item">
         <div>
-          <strong>${escapeHtml(profile?.full_name || "Ø·Ø§Ù„Ø¨")}</strong>
+          <strong>${escapeHtml(profile?.full_name || "طالب")}</strong>
           <p>${escapeHtml(comment.body)}</p>
         </div>
       </div>
@@ -1119,7 +1120,7 @@
     const form = event.currentTarget;
     const values = formValues(form);
     if (!hasSupabase) {
-      toast("Ø§Ø¶Ø¨Ø· Supabase Ø£ÙˆÙ„Ù‹Ø§ Ù…Ù† config.js.");
+      toast("اضبط Supabase أولًا من config.js.");
       return;
     }
 
@@ -1172,19 +1173,19 @@
   async function addCourse(form) {
     const values = formValues(form);
     const imageFile = form.elements.imageFile?.files?.[0];
-    const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : "";
+    const uploadedImage = imageFile ? await fileToAssetUrl(imageFile, "course-covers") : "";
     const attachments = await collectCourseAttachments(form);
     const videoThumbnail = youtubeThumbnail(values.courseUrl);
     const isFree = values.accessType !== "paid";
     const price = isFree ? 0 : Number(values.price || 0);
     const record = {
       title: values.title,
-      grade: values.grade || "Ø¹Ø§Ù…",
+      grade: values.grade || "عام",
       price,
       description: values.description,
       image_url: uploadedImage || values.imageUrl || videoThumbnail,
       attachments,
-      teacher_name: "Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ",
+      teacher_name: "مستر عماد حمدي",
       is_published: true
     };
     let courseId = "";
@@ -1198,13 +1199,13 @@
 
     if (values.courseUrl && courseId) {
       let sectionId = "";
-      const sectionRecord = { course_id: courseId, title: "Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª", image_url: uploadedImage || values.imageUrl || videoThumbnail, sort_order: 1 };
+      const sectionRecord = { course_id: courseId, title: "الفيديوهات", image_url: uploadedImage || values.imageUrl || videoThumbnail, sort_order: 1 };
       if (hasSupabase) {
         const { data, error } = await client.from("course_sections").insert(sectionRecord).select("id").single();
         if (error) return toast(error.message);
         sectionId = data.id;
       } else {
-        sectionId = fallbackStore.addSection({ courseId, title: "Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª", imageUrl: uploadedImage || values.imageUrl || videoThumbnail, sortOrder: 1 });
+        sectionId = fallbackStore.addSection({ courseId, title: "الفيديوهات", imageUrl: uploadedImage || values.imageUrl || videoThumbnail, sortOrder: 1 });
       }
 
       const lessonRecord = {
@@ -1231,13 +1232,13 @@
         });
       }
     }
-    await reload("ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„ÙƒÙˆØ±Ø³.");
+    await reload("تم إضافة الكورس.");
   }
 
   async function addSection(courseId, form) {
     const values = formValues(form);
     const imageFile = form.elements.imageFile?.files?.[0];
-    const imageUrl = imageFile ? await fileToDataUrl(imageFile) : "";
+    const imageUrl = imageFile ? await fileToAssetUrl(imageFile, "section-images") : "";
     const record = { course_id: courseId, title: values.title, image_url: imageUrl, sort_order: countSections(courseId) + 1 };
     if (hasSupabase) {
       const { error } = await client.from("course_sections").insert(record);
@@ -1245,20 +1246,20 @@
     } else {
       fallbackStore.addSection({ courseId, title: values.title, imageUrl, sortOrder: countSections(courseId) + 1 });
     }
-    await reload("ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„Ù‚Ø³Ù….");
+    await reload("تم إضافة القسم.");
   }
 
   async function addLesson(sectionId, form) {
     const values = formValues(form);
     const thumbnailFile = form.elements.thumbnailFile?.files?.[0];
-    const uploadedThumbnail = thumbnailFile ? await fileToDataUrl(thumbnailFile) : "";
+    const uploadedThumbnail = thumbnailFile ? await fileToAssetUrl(thumbnailFile, "lesson-thumbnails") : "";
     const videoThumbnail = youtubeThumbnail(values.videoUrl);
     const record = {
       section_id: sectionId,
       title: values.title,
       video_url: values.videoUrl,
       thumbnail_url: uploadedThumbnail || values.thumbnailUrl || videoThumbnail,
-      external_links: values.externalLink ? [{ label: "Ø±Ø§Ø¨Ø· Ø®Ø§Ø±Ø¬ÙŠ", url: values.externalLink }] : [],
+      external_links: values.externalLink ? [{ label: "رابط خارجي", url: values.externalLink }] : [],
       attachments: [],
       sort_order: state.data.lessons.filter((lesson) => lesson.sectionId === sectionId).length + 1
     };
@@ -1276,13 +1277,13 @@
         sortOrder: record.sort_order
       });
     }
-    await reload("ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ.");
+    await reload("تم إضافة الفيديو.");
   }
 
   async function addPost(form) {
     const values = formValues(form);
     const imageFile = form.elements.imageFile?.files?.[0];
-    const uploadedImage = imageFile ? await fileToDataUrl(imageFile) : "";
+    const uploadedImage = imageFile ? await fileToAssetUrl(imageFile, "post-images") : "";
     const record = {
       author_id: state.user.id,
       title: values.title,
@@ -1296,7 +1297,7 @@
     } else {
       fallbackStore.addPost(record);
     }
-    await reload("ØªÙ… Ù†Ø´Ø± Ø§Ù„Ù…Ù†Ø´ÙˆØ±.");
+    await reload("تم نشر المنشور.");
   }
 
   function fileToDataUrl(file) {
@@ -1308,10 +1309,32 @@
     });
   }
 
+  async function fileToAssetUrl(file, folder) {
+    if (!hasSupabase) return fileToDataUrl(file);
+
+    const safeName = file.name
+      .replace(/[^\w.\-]+/g, "-")
+      .replace(/-+/g, "-")
+      .slice(-90);
+    const filePath = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}-${safeName}`;
+    const { error } = await client.storage.from("course-assets").upload(filePath, file, {
+      cacheControl: "31536000",
+      upsert: false
+    });
+
+    if (error) {
+      toast("تعذر رفع الملف. تأكد من إنشاء bucket باسم course-assets في Supabase Storage.");
+      throw error;
+    }
+
+    const { data } = client.storage.from("course-assets").getPublicUrl(filePath);
+    return data.publicUrl;
+  }
+
   async function collectCourseAttachments(form) {
     const pairs = [
-      ["explanationFile", "Ù…Ù„Ù Ø§Ù„Ø´Ø±Ø­"],
-      ["questionsFile", "Ù…Ù„Ù Ø§Ù„Ø£Ø³Ø¦Ù„Ø©"]
+      ["explanationFile", "ملف الشرح"],
+      ["questionsFile", "ملف الأسئلة"]
     ];
     const attachments = [];
     for (const [fieldName, fallbackLabel] of pairs) {
@@ -1319,7 +1342,7 @@
       if (!file) continue;
       attachments.push({
         label: `${fallbackLabel} - ${file.name}`,
-        url: await fileToDataUrl(file),
+        url: await fileToAssetUrl(file, "course-files"),
         type: file.type || "application/octet-stream"
       });
     }
@@ -1329,11 +1352,11 @@
   async function editCourse(courseId) {
     const course = state.data.courses.find((item) => item.id === courseId);
     if (!course) return;
-    const title = window.prompt("Ø§Ø³Ù… Ø§Ù„ÙƒÙˆØ±Ø³", course.title);
+    const title = window.prompt("اسم الكورس", course.title);
     if (!title) return;
-    const price = window.prompt("Ø§Ù„Ø³Ø¹Ø±", course.price);
+    const price = window.prompt("السعر", course.price);
     if (price === null) return;
-    const description = window.prompt("ÙˆØµÙ Ù…Ø®ØªØµØ±", course.description);
+    const description = window.prompt("وصف مختصر", course.description);
     if (description === null) return;
     const patch = { title, price: Number(price || 0), description };
     if (hasSupabase) {
@@ -1342,7 +1365,7 @@
     } else {
       fallbackStore.updateCourse(courseId, patch);
     }
-    await reload("ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙƒÙˆØ±Ø³.");
+    await reload("تم تعديل الكورس.");
   }
 
   async function toggleCourse(courseId) {
@@ -1355,24 +1378,24 @@
     } else {
       fallbackStore.updateCourse(courseId, patch);
     }
-    await reload(patch.is_published ? "ØªÙ… Ù†Ø´Ø± Ø§Ù„ÙƒÙˆØ±Ø³." : "ØªÙ… Ø¥Ø®ÙØ§Ø¡ Ø§Ù„ÙƒÙˆØ±Ø³.");
+    await reload(patch.is_published ? "تم نشر الكورس." : "تم إخفاء الكورس.");
   }
 
   async function deleteCourse(courseId) {
-    if (!window.confirm("Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø§Ù„ÙƒÙˆØ±Ø³ ÙˆÙƒÙ„ Ø£Ù‚Ø³Ø§Ù…Ù‡ ÙˆÙÙŠØ¯ÙŠÙˆÙ‡Ø§ØªÙ‡ØŸ")) return;
+    if (!window.confirm("هل تريد حذف الكورس وكل أقسامه وفيديوهاته؟")) return;
     if (hasSupabase) {
       const { error } = await client.from("courses").delete().eq("id", courseId);
       if (error) return toast(error.message);
     } else {
       fallbackStore.deleteCourse(courseId);
     }
-    await reload("ØªÙ… Ø­Ø°Ù Ø§Ù„ÙƒÙˆØ±Ø³.");
+    await reload("تم حذف الكورس.");
   }
 
   async function editSection(sectionId) {
     const section = state.data.sections.find((item) => item.id === sectionId);
     if (!section) return;
-    const title = window.prompt("Ø§Ø³Ù… Ø§Ù„Ù‚Ø³Ù…", section.title);
+    const title = window.prompt("اسم القسم", section.title);
     if (!title) return;
     const patch = hasSupabase ? { title } : { title };
     if (hasSupabase) {
@@ -1381,24 +1404,24 @@
     } else {
       fallbackStore.updateSection(sectionId, patch);
     }
-    await reload("ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù‚Ø³Ù….");
+    await reload("تم تعديل القسم.");
   }
 
   async function deleteSection(sectionId) {
-    if (!window.confirm("Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø§Ù„Ù‚Ø³Ù… ÙˆÙƒÙ„ Ø§Ù„ÙÙŠØ¯ÙŠÙˆÙ‡Ø§Øª Ø¯Ø§Ø®Ù„Ù‡ØŸ")) return;
+    if (!window.confirm("هل تريد حذف القسم وكل الفيديوهات داخله؟")) return;
     if (hasSupabase) {
       const { error } = await client.from("course_sections").delete().eq("id", sectionId);
       if (error) return toast(error.message);
     } else {
       fallbackStore.deleteSection(sectionId);
     }
-    await reload("ØªÙ… Ø­Ø°Ù Ø§Ù„Ù‚Ø³Ù….");
+    await reload("تم حذف القسم.");
   }
 
   async function updateSectionImage(input) {
     const file = input.files?.[0];
     if (!file) return;
-    const imageUrl = await fileToDataUrl(file);
+    const imageUrl = await fileToAssetUrl(file, "section-images");
     const sectionId = input.dataset.sectionImage;
     if (hasSupabase) {
       const { error } = await client.from("course_sections").update({ image_url: imageUrl }).eq("id", sectionId);
@@ -1406,17 +1429,17 @@
     } else {
       fallbackStore.updateSection(sectionId, { imageUrl });
     }
-    await reload("ØªÙ… ØªØ­Ø¯ÙŠØ« ØµÙˆØ±Ø© Ø§Ù„Ù‚Ø³Ù….");
+    await reload("تم تحديث صورة القسم.");
   }
 
   async function editLesson(lessonId) {
     const lesson = state.data.lessons.find((item) => item.id === lessonId);
     if (!lesson) return;
-    const title = window.prompt("Ø¹Ù†ÙˆØ§Ù† Ø§Ù„ÙÙŠØ¯ÙŠÙˆ", lesson.title);
+    const title = window.prompt("عنوان الفيديو", lesson.title);
     if (!title) return;
-    const videoUrl = window.prompt("Ø±Ø§Ø¨Ø· Ø§Ù„ÙÙŠØ¯ÙŠÙˆ", lesson.videoUrl);
+    const videoUrl = window.prompt("رابط الفيديو", lesson.videoUrl);
     if (!videoUrl) return;
-    const thumbnailUrl = window.prompt("Ø±Ø§Ø¨Ø· ØµÙˆØ±Ø© Ù…ØµØºØ±Ø© Ø§Ø®ØªÙŠØ§Ø±ÙŠ", lesson.thumbnailUrl || youtubeThumbnail(videoUrl));
+    const thumbnailUrl = window.prompt("رابط صورة مصغرة اختياري", lesson.thumbnailUrl || youtubeThumbnail(videoUrl));
     if (thumbnailUrl === null) return;
     const patch = hasSupabase
       ? { title, video_url: videoUrl, thumbnail_url: thumbnailUrl || youtubeThumbnail(videoUrl) }
@@ -1427,24 +1450,24 @@
     } else {
       fallbackStore.updateLesson(lessonId, patch);
     }
-    await reload("ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„ÙÙŠØ¯ÙŠÙˆ.");
+    await reload("تم تعديل الفيديو.");
   }
 
   async function deleteLesson(lessonId) {
-    if (!window.confirm("Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ù‡Ø°Ø§ Ø§Ù„ÙÙŠØ¯ÙŠÙˆØŸ")) return;
+    if (!window.confirm("هل تريد حذف هذا الفيديو؟")) return;
     if (hasSupabase) {
       const { error } = await client.from("lessons").delete().eq("id", lessonId);
       if (error) return toast(error.message);
     } else {
       fallbackStore.deleteLesson(lessonId);
     }
-    await reload("ØªÙ… Ø­Ø°Ù Ø§Ù„ÙÙŠØ¯ÙŠÙˆ.");
+    await reload("تم حذف الفيديو.");
   }
 
   async function updateLessonImage(input) {
     const file = input.files?.[0];
     if (!file) return;
-    const thumbnailUrl = await fileToDataUrl(file);
+    const thumbnailUrl = await fileToAssetUrl(file, "lesson-thumbnails");
     const lessonId = input.dataset.lessonImage;
     if (hasSupabase) {
       const { error } = await client.from("lessons").update({ thumbnail_url: thumbnailUrl }).eq("id", lessonId);
@@ -1452,15 +1475,15 @@
     } else {
       fallbackStore.updateLesson(lessonId, { thumbnailUrl });
     }
-    await reload("ØªÙ… ØªØ­Ø¯ÙŠØ« ØµÙˆØ±Ø© Ø§Ù„ÙÙŠØ¯ÙŠÙˆ.");
+    await reload("تم تحديث صورة الفيديو.");
   }
 
   async function editPost(postId) {
     const post = state.data.posts.find((item) => item.id === postId);
     if (!post) return;
-    const title = window.prompt("Ø¹Ù†ÙˆØ§Ù† Ø§Ù„Ù…Ù†Ø´ÙˆØ±", post.title);
+    const title = window.prompt("عنوان المنشور", post.title);
     if (!title) return;
-    const body = window.prompt("Ù…Ø­ØªÙˆÙ‰ Ø§Ù„Ù…Ù†Ø´ÙˆØ±", post.body);
+    const body = window.prompt("محتوى المنشور", post.body);
     if (!body) return;
     const patch = { title, body };
     if (hasSupabase) {
@@ -1469,7 +1492,7 @@
     } else {
       fallbackStore.updatePost(postId, patch);
     }
-    await reload("ØªÙ… ØªØ¹Ø¯ÙŠÙ„ Ø§Ù„Ù…Ù†Ø´ÙˆØ±.");
+    await reload("تم تعديل المنشور.");
   }
 
   async function togglePost(postId) {
@@ -1482,18 +1505,18 @@
     } else {
       fallbackStore.updatePost(postId, patch);
     }
-    await reload(patch.is_published ? "ØªÙ… Ù†Ø´Ø± Ø§Ù„Ù…Ù†Ø´ÙˆØ±." : "ØªÙ… Ø¥Ø®ÙØ§Ø¡ Ø§Ù„Ù…Ù†Ø´ÙˆØ±.");
+    await reload(patch.is_published ? "تم نشر المنشور." : "تم إخفاء المنشور.");
   }
 
   async function deletePost(postId) {
-    if (!window.confirm("Ù‡Ù„ ØªØ±ÙŠØ¯ Ø­Ø°Ù Ø§Ù„Ù…Ù†Ø´ÙˆØ±ØŸ")) return;
+    if (!window.confirm("هل تريد حذف المنشور؟")) return;
     if (hasSupabase) {
       const { error } = await client.from("posts").delete().eq("id", postId);
       if (error) return toast(error.message);
     } else {
       fallbackStore.deletePost(postId);
     }
-    await reload("ØªÙ… Ø­Ø°Ù Ø§Ù„Ù…Ù†Ø´ÙˆØ±.");
+    await reload("تم حذف المنشور.");
   }
 
   async function addSupportMessage(form) {
@@ -1511,7 +1534,7 @@
     } else {
       fallbackStore.addSupport(record);
     }
-    await reload("ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ø§Ù„Ø±Ø³Ø§Ù„Ø©.");
+    await reload("تم إرسال الرسالة.");
   }
 
   async function addLessonComment(lessonId, form) {
@@ -1536,7 +1559,7 @@
         body: payload.body
       });
     }
-    await reload("ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„ØªØ¹Ù„ÙŠÙ‚.");
+    await reload("تم إضافة التعليق.");
   }
 
   async function buyCourse(courseId) {
@@ -1557,13 +1580,13 @@
       await loadData();
     }
     window.open(whatsappCourseLink(course), "_blank", "noopener,noreferrer");
-    toast("ØªÙ… ØªØ³Ø¬ÙŠÙ„ Ø·Ù„Ø¨ÙƒØŒ ÙˆØ³ÙŠØªÙ… ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨ Ù„Ø¥Ø±Ø³Ø§Ù„ Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø´Ø±Ø§Ø¡.");
+    toast("تم تسجيل طلبك، وسيتم فتح واتساب لإرسال بيانات الشراء.");
     render();
   }
 
   async function activateFreeCourse(courseId) {
     await saveEnrollment(state.user.id, courseId, "active");
-    await reload("ØªÙ… Ø¥Ø¶Ø§ÙØ© Ø§Ù„ÙƒÙˆØ±Ø³ Ø§Ù„Ù…Ø¬Ø§Ù†ÙŠ Ø¥Ù„Ù‰ Ù…ÙƒØªØ¨ØªÙƒ.");
+    await reload("تم إضافة الكورس المجاني إلى مكتبتك.");
     navigate("course", courseId);
   }
 
@@ -1593,22 +1616,22 @@
     } else {
       fallbackStore.updateEnrollment(id, status);
     }
-    await reload("ØªÙ… ØªØ­Ø¯ÙŠØ« Ø­Ø§Ù„Ø© Ø§Ù„Ø§Ø´ØªØ±Ø§Ùƒ.");
+    await reload("تم تحديث حالة الاشتراك.");
   }
 
   async function saveManualEnrollment(form) {
     const values = formValues(form);
     await saveEnrollment(values.userId, values.courseId, values.status);
-    await reload("ØªÙ… Ø­ÙØ¸ ØªÙØ¹ÙŠÙ„ Ø§Ù„ÙƒÙˆØ±Ø³ Ù„Ù„Ø·Ø§Ù„Ø¨.");
+    await reload("تم حفظ تفعيل الكورس للطالب.");
   }
 
   async function changeAdmin(form, promote) {
     const email = formValues(form).email.toLowerCase();
     const target = state.data.profiles.find((profile) => profile.email.toLowerCase() === email);
-    if (!target) return toast("Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø¹Ø«ÙˆØ± Ø¹Ù„Ù‰ Ù‡Ø°Ø§ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù….");
+    if (!target) return toast("لم يتم العثور على هذا المستخدم.");
     const admins = state.data.profiles.filter((profile) => profile.role === "admin");
     if (!promote && admins.length <= 1 && target.role === "admin") {
-      return toast("Ù„Ø§ ÙŠÙ…ÙƒÙ† Ø¥Ø²Ø§Ù„Ø© Ø¢Ø®Ø± Ø­Ø³Ø§Ø¨ Ù…Ø¯Ø±Ø³.");
+      return toast("لا يمكن إزالة آخر حساب مدرس.");
     }
     const role = promote ? "admin" : "student";
     if (hasSupabase) {
@@ -1618,7 +1641,7 @@
       fallbackStore.setRole(target.id, role);
     }
     if (target.id === state.profile.id) state.profile.role = role;
-    await reload("ØªÙ… ØªØ­Ø¯ÙŠØ« ØµÙ„Ø§Ø­ÙŠØ§Øª Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù….");
+    await reload("تم تحديث صلاحيات المستخدم.");
   }
 
   async function reload(message) {
@@ -1680,16 +1703,16 @@
   }
 
   function statusLabel(status) {
-    return { pending: "Ø¨Ø§Ù†ØªØ¸Ø§Ø± Ø§Ù„ØªÙØ¹ÙŠÙ„", active: "Ù…ÙØ¹Ù„", rejected: "Ù…Ø±ÙÙˆØ¶" }[status] || status;
+    return { pending: "بانتظار التفعيل", active: "مفعل", rejected: "مرفوض" }[status] || status;
   }
 
   function priceText(course) {
-    return Number(course.price) <= 0 ? "Ù…Ø¬Ø§Ù†ÙŠ" : `${course.price} Ø¬Ù†ÙŠÙ‡ / Ø§Ù„ÙƒÙˆØ±Ø³`;
+    return Number(course.price) <= 0 ? "مجاني" : `${course.price} جنيه / الكورس`;
   }
 
   function whatsappCourseLink(course) {
     const message = [
-      "Ø·Ù„Ø¨ Ø´Ø±Ø§Ø¡ ÙƒÙˆØ±Ø³",
+      "طلب شراء كورس",
       `ID: ${state.user.id}`,
       `Name: ${state.profile.full_name}`,
       `Course: ${course.title}`,
@@ -1699,14 +1722,14 @@
   }
 
   function whatsappGeneralLink() {
-    const message = `Ø§Ù„Ø³Ù„Ø§Ù… Ø¹Ù„ÙŠÙƒÙ…ØŒ Ø£Ø±ÙŠØ¯ Ø§Ù„ØªÙˆØ§ØµÙ„ Ù…Ø¹ Ù…Ù†ØµØ© Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ. Ø§Ù„Ø§Ø³Ù…: ${state.profile.full_name}`;
+    const message = `السلام عليكم، أريد التواصل مع منصة مستر عماد حمدي. الاسم: ${state.profile.full_name}`;
     return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }
 
   function shareSite() {
-    const data = { title: "Ù…Ù†ØµØ© Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ", text: "Ù…Ù†ØµØ© Ø§Ù„ØªØ§Ø±ÙŠØ® ÙˆØ§Ù„Ø¬ØºØ±Ø§ÙÙŠØ§", url: location.href };
+    const data = { title: "منصة مستر عماد حمدي", text: "منصة التاريخ والجغرافيا", url: location.href };
     if (navigator.share) navigator.share(data);
-    else navigator.clipboard.writeText(location.href).then(() => toast("ØªÙ… Ù†Ø³Ø® Ø±Ø§Ø¨Ø· Ø§Ù„Ù…ÙˆÙ‚Ø¹."));
+    else navigator.clipboard.writeText(location.href).then(() => toast("تم نسخ رابط الموقع."));
   }
 
   function formValues(form) {
@@ -1763,81 +1786,9 @@
     if (old) old.remove();
     const node = document.createElement("div");
     node.className = "toast";
-    node.textContent = fixMojibake(message);
+    node.textContent = message;
     document.body.appendChild(node);
     setTimeout(() => node.remove(), 3200);
-  }
-
-  function repairArabicText(root) {
-    document.title = fixMojibake(document.title);
-    document.querySelectorAll("meta[name='description']").forEach((meta) => {
-      meta.setAttribute("content", fixMojibake(meta.getAttribute("content") || ""));
-    });
-
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
-    textNodes.forEach((node) => {
-      node.nodeValue = fixMojibake(node.nodeValue);
-    });
-
-    root.querySelectorAll("*").forEach((element) => {
-      ["placeholder", "title", "aria-label", "alt"].forEach((attribute) => {
-        if (element.hasAttribute(attribute)) {
-          element.setAttribute(attribute, fixMojibake(element.getAttribute(attribute) || ""));
-        }
-      });
-    });
-  }
-
-  function fixMojibake(value) {
-    if (typeof value !== "string" || !/[ÃÂØÙ]/.test(value)) return value;
-    const bytes = [];
-    for (const char of value) {
-      const byte = windows1252Byte(char);
-      if (byte === null) return value;
-      bytes.push(byte);
-    }
-    try {
-      return new TextDecoder("utf-8").decode(new Uint8Array(bytes));
-    } catch (error) {
-      return value;
-    }
-  }
-
-  function windows1252Byte(char) {
-    const code = char.charCodeAt(0);
-    if (code <= 255) return code;
-    const map = {
-      0x20ac: 0x80,
-      0x201a: 0x82,
-      0x0192: 0x83,
-      0x201e: 0x84,
-      0x2026: 0x85,
-      0x2020: 0x86,
-      0x2021: 0x87,
-      0x02c6: 0x88,
-      0x2030: 0x89,
-      0x0160: 0x8a,
-      0x2039: 0x8b,
-      0x0152: 0x8c,
-      0x017d: 0x8e,
-      0x2018: 0x91,
-      0x2019: 0x92,
-      0x201c: 0x93,
-      0x201d: 0x94,
-      0x2022: 0x95,
-      0x2013: 0x96,
-      0x2014: 0x97,
-      0x02dc: 0x98,
-      0x2122: 0x99,
-      0x0161: 0x9a,
-      0x203a: 0x9b,
-      0x0153: 0x9c,
-      0x017e: 0x9e,
-      0x0178: 0x9f
-    };
-    return map[code] ?? null;
   }
 
   function escapeHtml(value) {
@@ -1875,7 +1826,7 @@
 
   function logoSvg(className) {
     return `
-      <svg class="${className}" viewBox="0 0 120 120" role="img" aria-label="Ø´Ø¹Ø§Ø± Ù…Ø³ØªØ± Ø¹Ù…Ø§Ø¯ Ø­Ù…Ø¯ÙŠ">
+      <svg class="${className}" viewBox="0 0 120 120" role="img" aria-label="شعار مستر عماد حمدي">
         <defs>
           <linearGradient id="logoGold" x1="20" x2="95" y1="15" y2="110" gradientUnits="userSpaceOnUse">
             <stop stop-color="#f3d27a"/>

@@ -1,5 +1,9 @@
 create extension if not exists "pgcrypto";
 
+insert into storage.buckets (id, name, public)
+values ('course-assets', 'course-assets', true)
+on conflict (id) do update set public = true;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text not null,
@@ -180,6 +184,23 @@ alter table public.enrollments enable row level security;
 alter table public.posts enable row level security;
 alter table public.comments enable row level security;
 alter table public.support_messages enable row level security;
+
+drop policy if exists "course assets public read" on storage.objects;
+create policy "course assets public read" on storage.objects
+  for select using (bucket_id = 'course-assets');
+
+drop policy if exists "admins upload course assets" on storage.objects;
+create policy "admins upload course assets" on storage.objects
+  for insert with check (bucket_id = 'course-assets' and public.is_admin());
+
+drop policy if exists "admins update course assets" on storage.objects;
+create policy "admins update course assets" on storage.objects
+  for update using (bucket_id = 'course-assets' and public.is_admin())
+  with check (bucket_id = 'course-assets' and public.is_admin());
+
+drop policy if exists "admins delete course assets" on storage.objects;
+create policy "admins delete course assets" on storage.objects
+  for delete using (bucket_id = 'course-assets' and public.is_admin());
 
 create policy "profiles read own or admin" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
