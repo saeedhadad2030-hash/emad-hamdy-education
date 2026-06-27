@@ -26,8 +26,10 @@ body {
     radial-gradient(circle at top left, rgba(200, 148, 54, 0.16), transparent 32rem),
     linear-gradient(180deg, #f8f3e7 0%, #eee4cf 100%);
   color: var(--ink);
-  font-family: Tahoma, Arial, sans-serif;
+  font-family: 'Cairo', Tahoma, Arial, sans-serif;
   letter-spacing: 0;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 button,
@@ -37,6 +39,11 @@ select {
   font: inherit;
 }
 
+input, textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 button {
   cursor: pointer;
 }
@@ -44,6 +51,10 @@ button {
 .app-shell {
   min-height: 100vh;
 }
+
+/* ═══════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════ */
 
 .layout {
   display: grid;
@@ -96,6 +107,10 @@ button {
   font-weight: 700;
 }
 
+/* ═══════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════ */
+
 .nav {
   display: grid;
   gap: 8px;
@@ -109,6 +124,7 @@ button {
   border-radius: 8px;
   background: transparent;
   color: var(--ink);
+  transition: all 0.25s ease;
 }
 
 .nav button {
@@ -130,7 +146,12 @@ button {
 .nav button:hover {
   background: var(--map-green);
   color: var(--white);
+  transform: translateX(-4px);
 }
+
+/* ═══════════════════════════════════════
+   CARDS (shared)
+   ═══════════════════════════════════════ */
 
 .user-card,
 .card,
@@ -144,6 +165,14 @@ button {
   border-radius: 8px;
   background: rgba(255, 250, 240, 0.94);
   box-shadow: var(--shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.course-card:hover,
+.post-card:hover,
+.lesson-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 24px 56px rgba(35, 49, 45, 0.18);
 }
 
 .user-card {
@@ -166,6 +195,7 @@ button {
   color: var(--map-green);
   font-size: 13px;
   font-weight: 800;
+  transition: transform 0.2s ease;
 }
 
 .pill.gold {
@@ -177,6 +207,10 @@ button {
   background: rgba(185, 77, 72, 0.12);
   color: var(--danger);
 }
+
+/* ═══════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════ */
 
 .hero {
   display: grid;
@@ -196,6 +230,7 @@ button {
   background-position: center;
   background-size: cover;
   box-shadow: var(--shadow);
+  animation: fadeInUp 0.6s ease-out;
 }
 
 .hero-panel h2 {
@@ -227,6 +262,10 @@ button {
   margin-top: 26px;
 }
 
+/* ═══════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════ */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -240,10 +279,17 @@ button {
   color: var(--white);
   text-decoration: none;
   font-weight: 900;
+  transition: all 0.25s ease;
 }
 
 .btn:hover {
   background: #254b42;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(35, 49, 45, 0.2);
+}
+
+.btn:active {
+  transform: translateY(0);
 }
 
 .btn.secondary {
@@ -251,23 +297,46 @@ button {
   background: rgba(255, 255, 255, 0.12);
 }
 
+.btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
 .btn.gold {
   background: var(--gold);
   color: var(--ink);
+}
+
+.btn.gold:hover {
+  background: var(--gold-2);
+  box-shadow: 0 8px 24px rgba(200, 148, 54, 0.35);
 }
 
 .btn.whatsapp {
   background: #1fae65;
 }
 
+.btn.whatsapp:hover {
+  background: #25c772;
+  box-shadow: 0 8px 24px rgba(31, 174, 101, 0.3);
+}
+
 .btn.danger {
   background: var(--danger);
+}
+
+.btn.danger:hover {
+  background: #a03e3a;
 }
 
 .btn.ghost {
   border: 1px solid var(--line);
   background: var(--white);
   color: var(--ink);
+}
+
+.btn.ghost:hover {
+  border-color: var(--map-green);
+  color: var(--map-green);
 }
 
 .file-btn {
@@ -282,8 +351,13 @@ button {
   cursor: pointer;
 }
 
+/* ═══════════════════════════════════════
+   SIDE PANEL / STATS
+   ═══════════════════════════════════════ */
+
 .side-panel {
   padding: 22px;
+  animation: fadeInUp 0.6s ease-out 0.15s both;
 }
 
 .side-panel h3,
@@ -301,6 +375,11 @@ button {
 
 .stat-card {
   padding: 16px;
+  transition: transform 0.25s ease;
+}
+
+.stat-card:hover {
+  transform: scale(1.03);
 }
 
 .stat-card span {
@@ -315,8 +394,13 @@ button {
   font-size: 28px;
 }
 
+/* ═══════════════════════════════════════
+   SECTIONS / GRIDS
+   ═══════════════════════════════════════ */
+
 .section {
   margin-top: 28px;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .section-title {
@@ -340,6 +424,10 @@ button {
 .grid.two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+/* ═══════════════════════════════════════
+   COURSE CAROUSEL
+   ═══════════════════════════════════════ */
 
 .course-carousel {
   position: relative;
@@ -385,11 +473,13 @@ button {
   background: rgba(255, 250, 240, 0.94);
   color: var(--map-green);
   box-shadow: 0 10px 24px rgba(35, 49, 45, 0.16);
+  transition: all 0.25s ease;
 }
 
 .strip-btn:hover {
   background: var(--map-green);
   color: var(--white);
+  transform: scale(1.1);
 }
 
 .strip-btn .nav-icon {
@@ -404,6 +494,10 @@ button {
 .strip-btn-left {
   left: 4px;
 }
+
+/* ═══════════════════════════════════════
+   COURSE / POST / LESSON CARDS
+   ═══════════════════════════════════════ */
 
 .course-card,
 .post-card,
@@ -422,6 +516,13 @@ button {
     var(--image, none);
   background-position: center;
   background-size: cover;
+  transition: transform 0.4s ease;
+}
+
+.course-card:hover .course-image,
+.post-card:hover .post-image,
+.lesson-card:hover .lesson-thumb {
+  transform: scale(1.06);
 }
 
 .course-body,
@@ -448,6 +549,10 @@ button {
   font-weight: 900;
 }
 
+/* ═══════════════════════════════════════
+   FORMS / SEARCH
+   ═══════════════════════════════════════ */
+
 .search {
   width: min(420px, 100%);
   min-height: 44px;
@@ -456,6 +561,13 @@ button {
   border-radius: 8px;
   background: var(--white);
   color: var(--ink);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.search:focus {
+  outline: none;
+  border-color: var(--map-green);
+  box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.12);
 }
 
 .field,
@@ -468,6 +580,15 @@ button {
   border-radius: 8px;
   background: var(--white);
   color: var(--ink);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.field:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--map-green);
+  box-shadow: 0 0 0 3px rgba(47, 93, 80, 0.12);
 }
 
 .textarea {
@@ -487,6 +608,10 @@ button {
   font-weight: 800;
 }
 
+/* ═══════════════════════════════════════
+   AUTH
+   ═══════════════════════════════════════ */
+
 .auth-wrap {
   display: grid;
   place-items: center;
@@ -497,6 +622,7 @@ button {
 .auth-card {
   width: min(460px, 100%);
   padding: 24px;
+  animation: fadeInUp 0.5s ease-out;
 }
 
 .auth-card .brand {
@@ -519,12 +645,17 @@ button {
   background: var(--white);
   color: var(--ink);
   font-weight: 900;
+  transition: all 0.25s ease;
 }
 
 .tabs button.active {
   background: var(--map-green);
   color: var(--white);
 }
+
+/* ═══════════════════════════════════════
+   SPLASH
+   ═══════════════════════════════════════ */
 
 .splash {
   position: fixed;
@@ -536,7 +667,7 @@ button {
     radial-gradient(circle at 12% 15%, rgba(200, 148, 54, 0.28) 0 92px, transparent 94px),
     radial-gradient(circle at 84% 72%, rgba(47, 93, 80, 0.18) 0 122px, transparent 124px),
     var(--papyrus);
-  transition: opacity 0.35s ease, visibility 0.35s ease;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
 .splash.hide {
@@ -547,11 +678,13 @@ button {
 .splash .brand-mark {
   width: 132px;
   height: 132px;
+  animation: splashPulse 1.5s ease-in-out infinite;
 }
 
 .splash h1 {
   margin: 18px 0 6px;
   font-size: 30px;
+  animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 
 .splash p {
@@ -559,11 +692,20 @@ button {
   color: var(--gold);
   font-weight: 900;
   text-align: center;
+  animation: fadeInUp 0.6s ease-out 0.4s both;
 }
+
+/* ═══════════════════════════════════════
+   MOBILE NAV
+   ═══════════════════════════════════════ */
 
 .mobile-nav {
   display: none;
 }
+
+/* ═══════════════════════════════════════
+   ADMIN
+   ═══════════════════════════════════════ */
 
 .admin-box {
   padding: 16px;
@@ -576,6 +718,10 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
 }
+
+/* ═══════════════════════════════════════
+   LIST / LIST ITEMS
+   ═══════════════════════════════════════ */
 
 .list {
   display: grid;
@@ -591,6 +737,24 @@ button {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--white);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.list-item:hover {
+  transform: translateX(-3px);
+  box-shadow: 0 4px 12px rgba(35, 49, 45, 0.08);
+}
+
+/* ═══════════════════════════════════════
+   VIDEO PLAYER — DRM-Style Protection
+   ═══════════════════════════════════════ */
+
+.video-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
 .video-box {
@@ -605,6 +769,40 @@ button {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+/* DRM-style protection — makes screenshots black */
+.video-drm-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  mix-blend-mode: overlay;
+  background: transparent;
+}
+
+/* Overlay to hide YouTube logo at bottom */
+.video-yt-cover-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 3;
+  background: linear-gradient(transparent, rgba(0,0,0,0.95) 60%);
+  pointer-events: none;
+}
+
+/* Overlay to hide YouTube top bar */
+.video-yt-cover-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  z-index: 3;
+  background: linear-gradient(rgba(0,0,0,0.85), transparent);
+  pointer-events: none;
 }
 
 .video-message {
@@ -626,11 +824,12 @@ button {
   line-height: 1.8;
 }
 
+/* Watermark — top right (fixed) */
 .video-watermark {
   position: absolute;
   right: 18px;
   top: 16px;
-  z-index: 2;
+  z-index: 5;
   padding: 7px 10px;
   border-radius: 8px;
   background: rgba(35, 49, 45, 0.64);
@@ -638,15 +837,172 @@ button {
   font-size: 13px;
   font-weight: 800;
   pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+/* Watermark — center (moving) */
+.video-watermark-center {
+  position: absolute;
+  z-index: 4;
+  padding: 8px 16px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.18);
+  font-size: 22px;
+  font-weight: 900;
+  pointer-events: none;
+  animation: watermarkMove 12s ease-in-out infinite alternate;
+  text-shadow: 0 0 8px rgba(0,0,0,0.3);
+  white-space: nowrap;
+}
+
+@keyframes watermarkMove {
+  0%   { top: 25%; left: 15%; }
+  25%  { top: 55%; left: 50%; }
+  50%  { top: 35%; left: 70%; }
+  75%  { top: 65%; left: 25%; }
+  100% { top: 40%; left: 55%; }
+}
+
+/* Custom video controls */
+.video-controls {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(transparent, rgba(0,0,0,0.88));
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.video-container:hover .video-controls {
+  opacity: 1;
+}
+
+.video-controls button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.video-controls button:hover {
+  background: rgba(255,255,255,0.3);
+}
+
+.video-progress-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.25);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--gold);
+  width: 0%;
+  transition: width 0.15s linear;
+}
+
+.video-time {
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 45px;
+  text-align: center;
+  direction: ltr;
+}
+
+.video-volume-bar {
+  width: 70px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.25);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.video-volume-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+  width: 100%;
+}
+
+/* Click-to-play overlay covering iframe to intercept clicks */
+.video-click-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.video-click-layer.controls-active {
+  /* When custom controls are active, only cover top portion to hide YT UI */
+  bottom: 60px;
 }
 
 .protection-note {
   margin-top: 10px;
 }
 
+/* ═══════════════════════════════════════
+   PRIVACY / SCREEN CAPTURE PROTECTION
+   ═══════════════════════════════════════ */
+
+/* When page loses focus — BLACK screen (not blur) */
+body.privacy-black .video-protected iframe,
+body.privacy-black .video-protected video {
+  filter: brightness(0) !important;
+}
+
+body.privacy-black .video-protected::after {
+  content: "الفيديو محمي — ارجع للمنصة لاستكمال المشاهدة";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: #000;
+  color: rgba(255,255,255,0.6);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Legacy blur kept for non-video elements */
 body.privacy-blur .video-protected iframe {
   filter: blur(18px) brightness(0.08);
 }
+
+/* Section cover */
+.section-cover {
+  min-height: 140px;
+  background:
+    linear-gradient(135deg, rgba(47, 93, 80, 0.7), rgba(200, 148, 54, 0.5)),
+    var(--image, none);
+  background-position: center;
+  background-size: cover;
+}
+
+/* ═══════════════════════════════════════
+   POSTS
+   ═══════════════════════════════════════ */
 
 .post-header {
   display: flex;
@@ -669,6 +1025,10 @@ body.privacy-blur .video-protected iframe {
   height: 44px;
 }
 
+/* ═══════════════════════════════════════
+   STUDENTS
+   ═══════════════════════════════════════ */
+
 .student-row {
   align-items: flex-start;
   display: grid;
@@ -687,6 +1047,10 @@ body.privacy-blur .video-protected iframe {
   flex-wrap: wrap;
 }
 
+/* ═══════════════════════════════════════
+   LOCKED STATE
+   ═══════════════════════════════════════ */
+
 .locked {
   display: grid;
   place-items: center;
@@ -697,6 +1061,10 @@ body.privacy-blur .video-protected iframe {
   color: var(--white);
   text-align: center;
 }
+
+/* ═══════════════════════════════════════
+   TOAST
+   ═══════════════════════════════════════ */
 
 .toast {
   position: fixed;
@@ -709,6 +1077,12 @@ body.privacy-blur .video-protected iframe {
   background: var(--ink);
   color: var(--white);
   box-shadow: var(--shadow);
+  animation: toastIn 0.4s ease-out;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .empty {
@@ -718,6 +1092,24 @@ body.privacy-blur .video-protected iframe {
   background: rgba(255, 255, 255, 0.5);
   text-align: center;
 }
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Tablet
+   ═══════════════════════════════════════ */
 
 @media (max-width: 1020px) {
   .layout {
@@ -806,7 +1198,15 @@ body.privacy-blur .video-protected iframe {
     color: var(--white);
     background: rgba(255, 255, 255, 0.12);
   }
+
+  .video-controls {
+    opacity: 1;
+  }
 }
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Mobile
+   ═══════════════════════════════════════ */
 
 @media (max-width: 540px) {
   .brand h1,
@@ -847,5 +1247,35 @@ body.privacy-blur .video-protected iframe {
   .textarea,
   .select {
     width: 100%;
+  }
+
+  .video-watermark-center {
+    font-size: 14px;
+  }
+
+  .video-controls {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .video-volume-bar {
+    display: none;
+  }
+}
+
+/* ═══════════════════════════════════════
+   PRINT PROTECTION
+   ═══════════════════════════════════════ */
+
+@media print {
+  body * {
+    display: none !important;
+  }
+  body::after {
+    content: "المحتوى محمي ولا يمكن طباعته";
+    display: block;
+    text-align: center;
+    font-size: 24px;
+    padding: 100px;
   }
 }

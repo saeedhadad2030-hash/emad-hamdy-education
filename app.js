@@ -29,22 +29,53 @@
   const app = document.getElementById("app");
 
   document.addEventListener("DOMContentLoaded", boot);
+  /* ── Screen-capture / recording protection ── */
   document.addEventListener("contextmenu", (event) => {
-    if (event.target.closest(".video-protected")) event.preventDefault();
+    if (event.target.closest(".video-protected, .video-container")) event.preventDefault();
   });
   document.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
     if (event.target.closest("input, textarea")) return;
-    if (key === "printscreen" || (event.ctrlKey && event.shiftKey && ["i", "j", "c"].includes(key))) {
+    /* Block PrintScreen, Ctrl+Shift+I/J/C, Ctrl+P (print), Ctrl+S (save) */
+    if (
+      key === "printscreen" ||
+      (event.ctrlKey && event.shiftKey && ["i", "j", "c", "s"].includes(key)) ||
+      (event.ctrlKey && ["p", "s", "u"].includes(key)) ||
+      key === "f12"
+    ) {
       event.preventDefault();
-      toast("تم تفعيل حماية الفيديو. التسجيل أو التصوير غير مسموح.");
+      toast("المحتوى محمي. التصوير أو الطباعة غير مسموح.");
     }
   });
-  window.addEventListener("blur", () => document.body.classList.add("privacy-blur"));
-  window.addEventListener("focus", () => document.body.classList.remove("privacy-blur"));
-  document.addEventListener("visibilitychange", () => {
-    document.body.classList.toggle("privacy-blur", document.hidden);
+  /* When window loses focus → BLACK out the video (not just blur) */
+  window.addEventListener("blur", () => {
+    document.body.classList.add("privacy-black");
+    document.body.classList.remove("privacy-blur");
   });
+  window.addEventListener("focus", () => {
+    document.body.classList.remove("privacy-black");
+    document.body.classList.remove("privacy-blur");
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      document.body.classList.add("privacy-black");
+    } else {
+      document.body.classList.remove("privacy-black");
+    }
+  });
+  /* Disable Picture-in-Picture globally */
+  document.addEventListener("enterpictureinpicture", (e) => {
+    e.preventDefault();
+    toast("وضع الصورة المصغرة غير مسموح.");
+  });
+  /* Try to block screen capture API */
+  if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+    const origGetDisplayMedia = navigator.mediaDevices.getDisplayMedia.bind(navigator.mediaDevices);
+    navigator.mediaDevices.getDisplayMedia = function() {
+      toast("تسجيل الشاشة غير مسموح أثناء المشاهدة.");
+      return Promise.reject(new DOMException("Screen capture blocked", "NotAllowedError"));
+    };
+  }
 
   async function boot() {
     renderSplash();
@@ -958,6 +989,11 @@
     `;
   }
 
+  /* ── YouTube IFrame API state ── */
+  let ytPlayer = null;
+  let ytPlayerReady = false;
+  let ytProgressInterval = null;
+
   function renderVideoPlayer(lesson) {
     if (location.protocol === "file:" && youtubeIdFromUrl(lesson.videoUrl)) {
       return `
@@ -972,13 +1008,196 @@
       `;
     }
 
+    const ytId = youtubeIdFromUrl(lesson.videoUrl);
+    const userLabel = `${escapeHtml(state.profile.full_name)} — ${escapeHtml(state.profile.email)}`;
+
+    if (ytId) {
+      /* YouTube video — use IFrame API with custom controls */
+      return `
+        <div class="video-container video-protected" data-yt-container>
+          <div class="video-box">
+            <div id="yt-player-slot" data-yt-id="${ytId}"></div>
+            <div class="video-drm-layer"></div>
+            <div class="video-yt-cover-top"></div>
+            <div class="video-yt-cover-bottom"></div>
+            <div class="video-click-layer controls-active" data-yt-toggle-play></div>
+            <span class="video-watermark">${userLabel}</span>
+            <span class="video-watermark-center">${userLabel}</span>
+          </div>
+          <div class="video-controls" data-yt-controls>
+            <button data-yt-play title="تشغيل / إيقاف">▶</button>
+            <div class="video-progress-bar" data-yt-progress>
+              <div class="video-progress-fill" data-yt-progress-fill></div>
+            </div>
+            <span class="video-time" data-yt-time>0:00</span>
+            <button data-yt-mute title="صوت">🔊</button>
+            <div class="video-volume-bar" data-yt-volume>
+              <div class="video-volume-fill" data-yt-volume-fill></div>
+            </div>
+            <button data-yt-fs title="ملء الشاشة">⛶</button>
+          </div>
+        </div>
+        <p class="muted protection-note">الفيديو محمي بعلامة مائية باسمك. أي مشاركة غير مصرح بها ستكون واضحة.</p>
+      `;
+    }
+
+    /* Non-YouTube (Vimeo or other) — standard iframe with overlays */
     return `
-      <div class="video-box video-protected">
-        <iframe src="${embedUrl(lesson.videoUrl)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen title="${escapeAttr(lesson.title)}"></iframe>
-        <span class="video-watermark">${escapeHtml(state.profile.full_name)} - ${escapeHtml(state.profile.email)}</span>
+      <div class="video-container video-protected">
+        <div class="video-box">
+          <iframe src="${embedUrl(lesson.videoUrl)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope" title="${escapeAttr(lesson.title)}"></iframe>
+          <div class="video-drm-layer"></div>
+          <span class="video-watermark">${userLabel}</span>
+          <span class="video-watermark-center">${userLabel}</span>
+        </div>
       </div>
-      <p class="muted protection-note">الفيديو عليه علامة مائية باسم الحساب. لا يمكن ضمان منع تصوير الشاشة 100% من المتصفح، لكن أي مشاركة غير مصرح بها ستكون واضحة من بيانات الحساب.</p>
+      <p class="muted protection-note">الفيديو محمي بعلامة مائية باسمك. أي مشاركة غير مصرح بها ستكون واضحة.</p>
     `;
+  }
+
+  /* Initialize YouTube player after DOM renders */
+  function initYouTubePlayer() {
+    const slot = document.getElementById("yt-player-slot");
+    if (!slot || !window.YT || !window.YT.Player) return;
+    const ytId = slot.dataset.ytId;
+    if (!ytId) return;
+
+    if (ytPlayer) {
+      try { ytPlayer.destroy(); } catch(e) {}
+      ytPlayer = null;
+      ytPlayerReady = false;
+    }
+    if (ytProgressInterval) { clearInterval(ytProgressInterval); ytProgressInterval = null; }
+
+    ytPlayer = new YT.Player("yt-player-slot", {
+      videoId: ytId,
+      width: "100%",
+      height: "100%",
+      playerVars: {
+        controls: 0,
+        modestbranding: 1,
+        rel: 0,
+        showinfo: 0,
+        fs: 0,
+        iv_load_policy: 3,
+        disablekb: 1,
+        playsinline: 1,
+        cc_load_policy: 0,
+        origin: location.origin
+      },
+      events: {
+        onReady: onYTReady,
+        onStateChange: onYTStateChange
+      }
+    });
+  }
+
+  function onYTReady() {
+    ytPlayerReady = true;
+    bindYTControls();
+  }
+
+  function onYTStateChange(event) {
+    const playBtn = document.querySelector("[data-yt-play]");
+    if (!playBtn) return;
+    if (event.data === YT.PlayerState.PLAYING) {
+      playBtn.textContent = "⏸";
+      startYTProgress();
+    } else {
+      playBtn.textContent = "▶";
+      stopYTProgress();
+    }
+  }
+
+  function bindYTControls() {
+    /* Play / Pause */
+    const playBtn = document.querySelector("[data-yt-play]");
+    if (playBtn) playBtn.addEventListener("click", toggleYTPlay);
+
+    /* Click-to-play layer */
+    const clickLayer = document.querySelector("[data-yt-toggle-play]");
+    if (clickLayer) clickLayer.addEventListener("click", toggleYTPlay);
+
+    /* Progress bar seek */
+    const progressBar = document.querySelector("[data-yt-progress]");
+    if (progressBar) progressBar.addEventListener("click", (e) => {
+      if (!ytPlayerReady) return;
+      const rect = progressBar.getBoundingClientRect();
+      const ratio = (e.clientX - rect.left) / rect.width;
+      const duration = ytPlayer.getDuration();
+      ytPlayer.seekTo(duration * ratio, true);
+    });
+
+    /* Mute button */
+    const muteBtn = document.querySelector("[data-yt-mute]");
+    if (muteBtn) muteBtn.addEventListener("click", () => {
+      if (!ytPlayerReady) return;
+      if (ytPlayer.isMuted()) {
+        ytPlayer.unMute();
+        muteBtn.textContent = "🔊";
+      } else {
+        ytPlayer.mute();
+        muteBtn.textContent = "🔇";
+      }
+    });
+
+    /* Volume bar */
+    const volumeBar = document.querySelector("[data-yt-volume]");
+    if (volumeBar) volumeBar.addEventListener("click", (e) => {
+      if (!ytPlayerReady) return;
+      const rect = volumeBar.getBoundingClientRect();
+      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      ytPlayer.setVolume(ratio * 100);
+      const fill = document.querySelector("[data-yt-volume-fill]");
+      if (fill) fill.style.width = (ratio * 100) + "%";
+    });
+
+    /* Fullscreen */
+    const fsBtn = document.querySelector("[data-yt-fs]");
+    if (fsBtn) fsBtn.addEventListener("click", () => {
+      const container = document.querySelector("[data-yt-container]");
+      if (!container) return;
+      if (document.fullscreenElement) {
+        document.exitFullscreen();
+      } else {
+        container.requestFullscreen().catch(() => {});
+      }
+    });
+  }
+
+  function toggleYTPlay() {
+    if (!ytPlayerReady) return;
+    const playerState = ytPlayer.getPlayerState();
+    if (playerState === YT.PlayerState.PLAYING) {
+      ytPlayer.pauseVideo();
+    } else {
+      ytPlayer.playVideo();
+    }
+  }
+
+  function startYTProgress() {
+    stopYTProgress();
+    ytProgressInterval = setInterval(updateYTProgress, 500);
+  }
+
+  function stopYTProgress() {
+    if (ytProgressInterval) { clearInterval(ytProgressInterval); ytProgressInterval = null; }
+  }
+
+  function updateYTProgress() {
+    if (!ytPlayerReady) return;
+    const current = ytPlayer.getCurrentTime();
+    const duration = ytPlayer.getDuration();
+    const fill = document.querySelector("[data-yt-progress-fill]");
+    const timeEl = document.querySelector("[data-yt-time]");
+    if (fill && duration > 0) fill.style.width = ((current / duration) * 100) + "%";
+    if (timeEl) timeEl.textContent = formatVideoTime(current) + " / " + formatVideoTime(duration);
+  }
+
+  function formatVideoTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    return m + ":" + String(s).padStart(2, "0");
   }
 
   function renderComment(comment) {
@@ -1068,6 +1287,11 @@
     const share = document.querySelector("[data-share]");
     if (share) share.addEventListener("click", shareSite);
     bindCourseWheel();
+
+    /* Initialize YouTube custom player if on a lesson page */
+    if (state.route === "lesson") {
+      setTimeout(initYouTubePlayer, 100);
+    }
   }
 
   function scrollCourses(button) {
@@ -1738,12 +1962,26 @@
 
   function embedUrl(url) {
     if (!url) return "";
-    const params = "rel=0&modestbranding=1&playsinline=1&iv_load_policy=3";
     const youtubeId = youtubeIdFromUrl(url);
-    if (youtubeId) return `https://www.youtube.com/embed/${youtubeId}?${params}`;
+    if (youtubeId) {
+      const params = [
+        "controls=0",
+        "modestbranding=1",
+        "rel=0",
+        "showinfo=0",
+        "fs=0",
+        "iv_load_policy=3",
+        "disablekb=1",
+        "playsinline=1",
+        "cc_load_policy=0",
+        "enablejsapi=1",
+        `origin=${encodeURIComponent(location.origin)}`
+      ].join("&");
+      return `https://www.youtube-nocookie.com/embed/${youtubeId}?${params}`;
+    }
     if (url.includes("vimeo.com/")) {
       const id = url.split("vimeo.com/")[1].split(/[?#]/)[0];
-      return `https://player.vimeo.com/video/${id}`;
+      return `https://player.vimeo.com/video/${id}?title=0&byline=0&portrait=0`;
     }
     return url;
   }
