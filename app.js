@@ -152,12 +152,32 @@
     renderSplash();
     await loadSession();
     await loadData();
+    restoreRouteFromHash();
     setTimeout(() => {
       const splash = document.querySelector(".splash");
       if (splash) splash.classList.add("hide");
     }, 900);
     render();
   }
+
+  /* Parse URL hash to restore route on refresh */
+  function restoreRouteFromHash() {
+    const hash = location.hash.replace(/^#\/?/, "");
+    if (!hash) return;
+    const parts = hash.split("/");
+    const route = parts[0] || "home";
+    const id = parts[1] || null;
+    if (["home","courses","course","lesson","posts","support","students","more"].includes(route)) {
+      state.route = route;
+      state.routeId = id;
+    }
+  }
+
+  /* Listen for browser back/forward */
+  window.addEventListener("hashchange", () => {
+    restoreRouteFromHash();
+    render();
+  });
 
   async function loadSession() {
     if (!hasSupabase) {
@@ -499,16 +519,8 @@
 
   function renderCourseStrip(courses) {
     return `
-      <div class="course-carousel">
-        <button class="strip-btn strip-btn-right" data-course-scroll="back" type="button" aria-label="السابق">
-          ${iconSvg("chevronRight")}
-        </button>
-        <div class="course-strip" data-course-strip>
-          ${courses.map(renderCourseCard).join("") || empty("لا توجد كورسات مطابقة.")}
-        </div>
-        <button class="strip-btn strip-btn-left" data-course-scroll="next" type="button" aria-label="التالي">
-          ${iconSvg("chevronLeft")}
-        </button>
+      <div class="course-grid">
+        ${courses.map(renderCourseCard).join("") || empty("لا توجد كورسات مطابقة.")}
       </div>
     `;
   }
@@ -1470,7 +1482,8 @@
         password: values.password,
         options: { data: { full_name: values.name, login_password: values.password } }
       });
-      if (error) return toast(error.message);
+      if (error) return toast(friendlyAuthError(error.message));
+      if (!data.user) return toast("حدث خطأ غير متوقع. حاول مرة أخرى.");
       state.user = data.user;
       state.profile = await getOrCreateProfile(data.user, values.name);
     } else {
@@ -1478,13 +1491,32 @@
         email: values.email,
         password: values.password
       });
-      if (error) return toast(error.message);
+      if (error) return toast(friendlyAuthError(error.message));
       state.user = data.user;
       state.profile = await getOrCreateProfile(data.user);
     }
 
     await loadData();
     render();
+  }
+
+  function friendlyAuthError(msg) {
+    const lower = (msg || "").toLowerCase();
+    if (lower.includes("invalid login") || lower.includes("invalid email or password"))
+      return "البريد أو كلمة السر غلط. تأكد من البيانات وحاول تاني.";
+    if (lower.includes("email not confirmed"))
+      return "لازم تأكد بريدك الإلكتروني الأول. افتح الإيميل واضغط على رابط التأكيد.";
+    if (lower.includes("user not found") || lower.includes("no user found") || lower.includes("email not found"))
+      return "الإيميل ده مش مسجل عندنا. اعمل حساب جديد أو تأكد من الإيميل.";
+    if (lower.includes("already registered") || lower.includes("already been registered"))
+      return "الإيميل ده مسجل بالفعل. جرب تسجيل الدخول بدل إنشاء حساب.";
+    if (lower.includes("too many requests") || lower.includes("rate limit"))
+      return "محاولات كتير. استنى شوية وحاول تاني.";
+    if (lower.includes("weak password") || lower.includes("password"))
+      return "كلمة السر ضعيفة. استخدم 6 حروف على الأقل.";
+    if (lower.includes("network") || lower.includes("fetch"))
+      return "مفيش اتصال بالإنترنت. تأكد من الاتصال وحاول تاني.";
+    return msg || "حدث خطأ. حاول مرة أخرى.";
   }
 
   async function getOrCreateProfile(user, name = "") {
@@ -1507,6 +1539,8 @@
     state.user = null;
     state.profile = null;
     state.route = "home";
+    state.routeId = null;
+    location.hash = "";
     render();
   }
 
@@ -1994,6 +2028,9 @@
     state.route = route;
     state.routeId = id;
     state.search = "";
+    /* Save route to URL hash so refresh keeps same page */
+    const hash = id ? `${route}/${id}` : route;
+    history.replaceState(null, "", `#${hash}`);
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
