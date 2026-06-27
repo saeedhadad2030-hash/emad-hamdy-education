@@ -31,8 +31,13 @@
   document.addEventListener("DOMContentLoaded", boot);
 
   /* ══════════════════════════════════════════════
-     CONTENT PROTECTION — Desktop + Mobile
+     CONTENT PROTECTION — ONLY active on video pages
      ══════════════════════════════════════════════ */
+
+  /* Helper: only protect when watching a video */
+  function isWatchingVideo() {
+    return state.route === "lesson";
+  }
 
   /* 1. Block right-click / long-press on video */
   document.addEventListener("contextmenu", (event) => {
@@ -43,8 +48,9 @@
     }
   });
 
-  /* 2. Block keyboard shortcuts (Desktop) */
+  /* 2. Block keyboard shortcuts (Desktop) — only on video page */
   document.addEventListener("keydown", (event) => {
+    if (!isWatchingVideo()) return;
     const key = event.key.toLowerCase();
     if (event.target.closest("input, textarea")) return;
     if (
@@ -58,47 +64,48 @@
     }
   });
 
-  /* 3. Visibility change — BLACK screen (works on both Desktop & Mobile) */
+  /* 3. Visibility change — BLACK screen — only on video page */
   document.addEventListener("visibilitychange", () => {
+    if (!isWatchingVideo()) return;
     if (document.hidden) {
       document.body.classList.add("privacy-black");
     } else {
-      /* Small delay before removing black — catches quick screenshot attempts */
       setTimeout(() => document.body.classList.remove("privacy-black"), 300);
     }
   });
 
-  /* 4. Window blur/focus — BLACK screen */
+  /* 4. Window blur/focus — only on video page */
   window.addEventListener("blur", () => {
+    if (!isWatchingVideo()) return;
     document.body.classList.add("privacy-black");
   });
   window.addEventListener("focus", () => {
-    setTimeout(() => document.body.classList.remove("privacy-black"), 300);
+    document.body.classList.remove("privacy-black");
   });
 
-  /* 5. Pause/Resume events (Mobile browsers) */
+  /* 5. Pause/Resume events (Mobile) — only on video page */
   window.addEventListener("pagehide", () => {
+    if (!isWatchingVideo()) return;
     document.body.classList.add("privacy-black");
   });
   window.addEventListener("pageshow", () => {
-    setTimeout(() => document.body.classList.remove("privacy-black"), 300);
+    document.body.classList.remove("privacy-black");
   });
 
-  /* 6. Mobile: block long-press (save image / share) */
+  /* 6. Mobile: block long-press on video elements */
   document.addEventListener("touchstart", (event) => {
     if (event.target.closest(".video-protected, .video-container, .video-box")) {
-      /* Prevent long-press context menu on mobile */
       event.target.style.webkitTouchCallout = "none";
     }
   }, { passive: true });
 
-  /* 7. Mobile: detect iOS screenshot (screen resize flicker) */
+  /* 7. Mobile: detect iOS screenshot — only on video page */
   let lastWidth = window.innerWidth;
   let lastHeight = window.innerHeight;
   window.addEventListener("resize", () => {
+    if (!isWatchingVideo()) { lastWidth = window.innerWidth; lastHeight = window.innerHeight; return; }
     const w = window.innerWidth;
     const h = window.innerHeight;
-    /* iOS screenshots cause a brief resize event */
     if (Math.abs(w - lastWidth) > 50 || Math.abs(h - lastHeight) > 50) {
       document.body.classList.add("privacy-black");
       toast("تم اكتشاف محاولة تصوير الشاشة.");
@@ -122,11 +129,11 @@
     };
   }
 
-  /* 10. Mobile: detect screen recording (Android control center / iOS) */
-  /* When screen recording starts, some browsers fire blur + focus rapidly */
+  /* 10. Mobile: detect screen recording — only on video page */
   let blurFocusCount = 0;
   let blurFocusTimer = null;
   function trackBlurFocus() {
+    if (!isWatchingVideo()) return;
     blurFocusCount++;
     if (blurFocusTimer) clearTimeout(blurFocusTimer);
     blurFocusTimer = setTimeout(() => {
@@ -141,7 +148,7 @@
   window.addEventListener("blur", trackBlurFocus);
   window.addEventListener("focus", trackBlurFocus);
 
-  /* 11. Prevent drag (mobile & desktop) */
+  /* 11. Prevent drag on video elements */
   document.addEventListener("dragstart", (e) => {
     if (e.target.closest(".video-protected, .video-container")) {
       e.preventDefault();
