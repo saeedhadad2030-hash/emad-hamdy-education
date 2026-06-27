@@ -156,6 +156,7 @@
   });
 
   async function boot() {
+    restoreTheme();
     renderSplash();
     try {
       await loadSession();
@@ -320,12 +321,14 @@
 
   function render() {
     if (!state.user) {
-      app.innerHTML = hasSupabase ? renderAuth() : renderSetupRequired();
+      app.innerHTML = (hasSupabase ? renderAuth() : renderSetupRequired()) + renderThemeToggle();
       bindAuth();
+      bindThemeToggle();
       return;
     }
 
     app.innerHTML = `
+      ${renderThemeToggle()}
       <div class="layout">
         ${renderSidebar()}
         <div>
@@ -337,6 +340,7 @@
     `;
     bindGlobal();
     bindRoute();
+    bindThemeToggle();
   }
 
   function renderAuth() {
@@ -2311,6 +2315,35 @@
       setRole: () => {}
     };
   }
+
+  /* ══════════════════════════════════════════════
+     THEME TOGGLE (Dark / Light)
+     ══════════════════════════════════════════════ */
+
+  function renderThemeToggle() {
+    const isDark = document.body.classList.contains("dark");
+    return `<button class="theme-toggle" data-theme-toggle title="${isDark ? 'الوضع الفاتح' : 'الوضع الداكن'}">${isDark ? '☀️' : '🌙'}</button>`;
+  }
+
+  function bindThemeToggle() {
+    const btn = document.querySelector("[data-theme-toggle]");
+    if (btn) btn.addEventListener("click", toggleTheme);
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle("dark");
+    const isDark = document.body.classList.contains("dark");
+    localStorage.setItem("theme", isDark ? "dark" : "light");
+    /* Re-render to update toggle icon */
+    render();
+  }
+
+  function restoreTheme() {
+    const saved = localStorage.getItem("theme");
+    if (saved === "dark") {
+      document.body.classList.add("dark");
+    } else if (saved === "light") {
+      document.body.classList.remove("dark");
+    }
+  }
 })();
-
-
