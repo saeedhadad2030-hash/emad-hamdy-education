@@ -575,6 +575,8 @@
       .filter((section) => section.courseId === course.id)
       .sort((a, b) => a.sortOrder - b.sortOrder);
     const canWatch = canAccessCourse(course.id);
+    const isPaid = Number(course.price) > 0;
+    const enrollment = getEnrollment(course.id);
     return `
       <section>
         <div class="section-title">
@@ -584,17 +586,25 @@
             <p class="muted">${escapeHtml(course.description)}</p>
           </div>
           <div class="row">
-            <span class="pill gold">${course.price} جنيه</span>
             <span class="pill gold">${priceText(course)}</span>
-            ${renderBuyButton(course)}
+            ${enrollment?.status === "active" ? '<span class="pill">مشترك ✓</span>' : ''}
           </div>
         </div>
-        ${!canWatch ? `<div class="locked"><div><h3>الفيديوهات مقفولة</h3><p>اشتر الكورس عبر واتساب، وبعد التفعيل هتظهر لك الفيديوهات.</p></div></div>` : ""}
-        ${isAdmin() ? renderSectionEditor(course.id) : ""}
+        ${isPaid && !canWatch ? `
+          <div class="whatsapp-banner">
+            <div>
+              <h3>💰 ${course.price} جنيه / للكورس</h3>
+              <p>تقدر تشوف محتوى الكورس. للاشتراك تواصل عبر واتساب وهيتم تفعيل حسابك.</p>
+            </div>
+            <button class="btn whatsapp" data-buy-course="${course.id}">📱 للتواصل لشراء الكورس اضغط هنا</button>
+          </div>
+        ` : ''}
+        ${isAdmin() ? renderSectionEditor(course.id) : ''}
+        <h3 class="section" style="margin-bottom:8px">أقسام الكورس: ${sections.length}</h3>
         <div class="list">
           ${sections
             .map((section) => renderSectionBlock(section, canWatch))
-            .join("") || empty("لا توجد أقسام في هذا الكورس بعد.")}
+            .join('') || empty('لا توجد أقسام في هذا الكورس بعد.')}
         </div>
         ${renderCourseAttachments(course)}
       </section>
@@ -643,9 +653,7 @@
                 <div class="lesson-thumb" style="${bg(lesson.thumbnailUrl)}"></div>
                 <div class="lesson-body">
                   <h3>${escapeHtml(lesson.title)}</h3>
-                  <button class="btn ${canWatch ? "" : "ghost"}" ${canWatch ? `data-open-lesson="${lesson.id}"` : "disabled"}>
-                    ${canWatch ? "افتح الفيديو" : "مغلق لحين التفعيل"}
-                  </button>
+                  <button class="btn" data-open-lesson="${lesson.id}">افتح الفيديو</button>
                   ${isAdmin() ? `
                     <div class="card-actions" style="margin-top:10px">
                       <button class="btn ghost" data-edit-lesson="${lesson.id}">تعديل</button>
@@ -668,6 +676,7 @@
     const section = state.data.sections.find((item) => item.id === lesson.sectionId);
     const course = state.data.courses.find((item) => item.id === section?.courseId);
     const canWatch = course && canAccessCourse(course.id);
+    const isPaid = course && Number(course.price) > 0;
     const comments = state.data.comments.filter((comment) => comment.lesson_id === lesson.id || comment.lessonId === lesson.id);
     return `
       <section>
@@ -680,7 +689,13 @@
         ${
           canWatch
             ? renderVideoPlayer(lesson)
-            : `<div class="locked"><div><h3>هذا الفيديو للمشتركين فقط</h3><p>يجب تفعيل اشتراكك في الكورس أولًا.</p></div></div>`
+            : `<div class="locked">
+                <div>
+                  <h3>🔒 هذا الفيديو للمشتركين فقط</h3>
+                  <p>اشترك في كورس "${escapeHtml(course?.title || '')}" عشان تقدر تشاهد الفيديو.</p>
+                  ${isPaid ? `<button class="btn whatsapp" data-buy-course="${course.id}" style="margin-top:14px">📱 للتواصل لشراء الكورس اضغط هنا</button>` : ''}
+                </div>
+              </div>`
         }
         <div class="grid two section">
           <div class="card">
@@ -2094,11 +2109,20 @@
 
   function whatsappCourseLink(course) {
     const message = [
-      "طلب شراء كورس",
-      `ID: ${state.user.id}`,
-      `Name: ${state.profile.full_name}`,
-      `Course: ${course.title}`,
-      `Price: ${course.price} EGP`
+      `━━━━━━━━━━━━━━━━`,
+      `📚 *طلب اشتراك في كورس*`,
+      `━━━━━━━━━━━━━━━━`,
+      ``,
+      `👤 *الاسم:* ${state.profile.full_name}`,
+      `📧 *البريد:* ${state.profile.email}`,
+      ``,
+      `📖 *الكورس:* ${course.title}`,
+      `🏷️ *الصف:* ${course.grade || 'عام'}`,
+      `💰 *السعر:* ${course.price} جنيه`,
+      ``,
+      `━━━━━━━━━━━━━━━━`,
+      `أرجو تفعيل اشتراكي بعد الدفع.`,
+      `شكراً لكم 🙏`
     ].join("\n");
     return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }

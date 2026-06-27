@@ -313,11 +313,54 @@ button {
 
 .btn.whatsapp {
   background: #1fae65;
+  font-size: 15px;
 }
 
 .btn.whatsapp:hover {
   background: #25c772;
   box-shadow: 0 8px 24px rgba(31, 174, 101, 0.3);
+}
+
+/* WhatsApp purchase banner */
+.whatsapp-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #128c4e 0%, #1fae65 100%);
+  color: #fff;
+  margin-bottom: 18px;
+  animation: fadeInUp 0.4s ease-out;
+  box-shadow: 0 8px 28px rgba(31, 174, 101, 0.25);
+}
+
+.whatsapp-banner h3 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.whatsapp-banner p {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.whatsapp-banner .btn.whatsapp {
+  background: #fff;
+  color: #128c4e;
+  font-weight: 900;
+  font-size: 16px;
+  padding: 12px 28px;
+  white-space: nowrap;
+}
+
+.whatsapp-banner .btn.whatsapp:hover {
+  background: #e8f5ee;
+  color: #0d6e3e;
 }
 
 .btn.danger {

@@ -225,20 +225,9 @@ create policy "sections visible for published courses" on public.course_sections
 create policy "admins manage sections" on public.course_sections
   for all using (public.is_admin()) with check (public.is_admin());
 
-create policy "lessons visible to enrolled students or admins" on public.lessons
+create policy "lessons visible to all authenticated users" on public.lessons
   for select using (
-    public.is_admin() or exists (
-      select 1
-      from public.course_sections s
-      join public.courses c on c.id = s.course_id
-      left join public.enrollments e on e.course_id = c.id and e.user_id = auth.uid()
-      where s.id = section_id
-        and c.is_published
-        and (
-          c.price <= 0
-          or e.status = 'active'
-        )
-    )
+    auth.uid() is not null
   );
 create policy "admins manage lessons" on public.lessons
   for all using (public.is_admin()) with check (public.is_admin());
