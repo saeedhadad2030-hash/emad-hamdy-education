@@ -186,9 +186,19 @@
     try {
       await loadSession();
       if (state.user) {
-        /* Don't show loading screen — render immediately then load in background */
-        state.dataLoading = false;
-        state.data = emptyData();
+        const cached = localStorage.getItem("platformCache_" + state.user.id);
+        if (cached) {
+          try {
+            state.data = JSON.parse(cached);
+            state.dataLoading = false;
+          } catch(e) {
+            state.data = emptyData();
+            state.dataLoading = true;
+          }
+        } else {
+          state.data = emptyData();
+          state.dataLoading = true;
+        }
         render();
         loadData().then(() => {
           state.dataLoading = false;
@@ -244,6 +254,11 @@
   async function loadData() {
     state.dataLoading = false;
     state.data = hasSupabase ? await loadSupabaseData() : emptyData();
+    
+    try {
+      localStorage.setItem("platformCache_" + state.user.id, JSON.stringify(state.data));
+    } catch(e) {}
+    
     state.courseLessonsLoaded = new Set(state.data.courses.map((course) => course.id));
     state.postSocialLoaded = true;
     state.lessonCommentsLoaded = new Set(state.data.lessons.map((lesson) => lesson.id));
