@@ -406,6 +406,64 @@
     bindGlobal();
     bindRoute();
     bindThemeToggle();
+    initAboutCarousel();
+  }
+
+  let aboutCarouselTimer = null;
+  
+  function initAboutCarousel() {
+    if (aboutCarouselTimer) {
+      clearInterval(aboutCarouselTimer);
+      aboutCarouselTimer = null;
+    }
+    
+    const container = document.getElementById("about-carousel-container");
+    if (!container) return;
+    
+    const slides = container.querySelectorAll("[data-about-slide]");
+    if (slides.length <= 1) return;
+    
+    let currentIndex = 0;
+    
+    function showSlide(index) {
+      slides.forEach(slide => {
+        slide.classList.remove('active');
+      });
+      slides[index].classList.add('active');
+      
+      const counter = document.getElementById("about-carousel-counter");
+      if (counter) counter.textContent = `${index + 1} / ${slides.length}`;
+      currentIndex = index;
+    }
+    
+    function nextSlide() {
+      showSlide((currentIndex + 1) % slides.length);
+    }
+    
+    function prevSlide() {
+      showSlide((currentIndex - 1 + slides.length) % slides.length);
+    }
+    
+    aboutCarouselTimer = setInterval(nextSlide, 5000);
+    
+    const nextBtn = container.querySelector("[data-about-next]");
+    const prevBtn = container.querySelector("[data-about-prev]");
+    
+    if (nextBtn) {
+      nextBtn.addEventListener("click", () => {
+        nextSlide();
+        clearInterval(aboutCarouselTimer);
+        aboutCarouselTimer = setInterval(nextSlide, 5000);
+      });
+    }
+    
+    if (prevBtn) {
+      prevBtn.addEventListener("click", () => {
+        prevSlide();
+        clearInterval(aboutCarouselTimer);
+        aboutCarouselTimer = setInterval(nextSlide, 5000);
+      });
+    }
   }
 
   function renderAuth() {
@@ -627,11 +685,8 @@
     });
     if (!entries.length && !isAdmin()) return "";
 
-    const activeIndex = state.aboutSlideIndex || 0;
-    const entry = entries[activeIndex];
-
     return `
-      <section class="section about-section">
+      <section class="section about-section" id="about-carousel-container">
         <div class="section-title">
           <div>
             <h2>نبذة عن مستر عماد حمدي</h2>
@@ -640,26 +695,28 @@
           ${entries.length > 1 ? `
             <div class="row" style="gap: 8px;">
               <button class="btn icon ghost" data-about-prev title="السابق">▶</button>
-              <span class="pill gold">${activeIndex + 1} / ${entries.length}</span>
+              <span class="pill gold" id="about-carousel-counter">1 / ${entries.length}</span>
               <button class="btn icon ghost" data-about-next title="التالي">◀</button>
             </div>
           ` : entries.length === 1 ? `<span class="pill gold">1 نبذة</span>` : ""}
         </div>
         ${isAdmin() ? renderAboutComposer() : ""}
-        ${entry ? `
+        ${entries.length ? `
           <div class="about-stack ${entries.length > 1 ? 'is-stacked' : ''}">
-            <article class="about-card active">
-              ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
-              <div class="about-content">
-                <span class="pill">مستر عماد حمدي</span>
-                <h3>${escapeHtml(entry.title)}</h3>
-                <p>${escapeHtml(entry.body)}</p>
-                <div class="about-meta">
-                  <span>${formatDate(entry.created_at)}</span>
-                  ${isAdmin() ? `<button class="btn danger" data-delete-about="${entry.id}">حذف</button>` : ""}
+            ${entries.map((entry, index) => `
+              <article class="about-card ${index === 0 ? 'active' : ''}" data-about-slide="${index}">
+                ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
+                <div class="about-content">
+                  <span class="pill">مستر عماد حمدي</span>
+                  <h3>${escapeHtml(entry.title)}</h3>
+                  <p>${escapeHtml(entry.body)}</p>
+                  <div class="about-meta">
+                    <span>${formatDate(entry.created_at)}</span>
+                    ${isAdmin() ? `<button class="btn danger" data-delete-about="${entry.id}">حذف</button>` : ""}
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            `).join("")}
           </div>
         ` : `<div class="empty">أضف أول نبذة للظهور في الصفحة الرئيسية.</div>`}
       </section>
@@ -1731,20 +1788,6 @@
     bindClicks("[data-toggle-student]", (node) => toggleStudentActive(node.dataset.toggleStudent));
     bindClicks("[data-course-scroll]", (node) => scrollCourses(node));
     bindClicks("[data-delete-about]", (node) => deleteAboutEntry(node.dataset.deleteAbout));
-    
-    bindClicks("[data-about-next]", () => {
-      const entries = state.data.aboutEntries;
-      if (!entries.length) return;
-      state.aboutSlideIndex = ((state.aboutSlideIndex || 0) + 1) % entries.length;
-      render();
-    });
-    
-    bindClicks("[data-about-prev]", () => {
-      const entries = state.data.aboutEntries;
-      if (!entries.length) return;
-      state.aboutSlideIndex = ((state.aboutSlideIndex || 0) - 1 + entries.length) % entries.length;
-      render();
-    });
 
     bindClicks("[data-enroll-status]", (node) => {
       const [id, status] = node.dataset.enrollStatus.split(":");

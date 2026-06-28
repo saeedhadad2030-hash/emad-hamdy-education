@@ -308,34 +308,62 @@ button {
   margin-bottom: 16px;
 }
 
-.about-carousel {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(300px, 520px);
-  gap: 16px;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scroll-snap-type: inline mandatory;
-  padding: 4px 4px 16px;
+.about-stack {
+  position: relative;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
-.about-carousel::-webkit-scrollbar {
-  height: 8px;
+.about-stack.is-stacked::before,
+.about-stack.is-stacked::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  pointer-events: none;
 }
 
-.about-carousel::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(47, 93, 80, 0.28);
+.about-stack.is-stacked::before {
+  transform: translateY(12px) scale(0.95);
+  z-index: 1;
+  opacity: 0.8;
 }
 
-.about-card {
+.about-stack.is-stacked::after {
+  transform: translateY(24px) scale(0.9);
+  z-index: 0;
+  opacity: 0.5;
+}
+
+.about-stack .about-card {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
   min-height: 100%;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card-bg);
   box-shadow: var(--shadow);
-  scroll-snap-align: start;
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95) translateX(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease, visibility 0.5s ease;
+}
+
+.about-stack .about-card.active {
+  position: relative;
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1) translateX(0);
 }
 
 .about-image {
@@ -1630,10 +1658,6 @@ body.privacy-blur .video-protected iframe {
   .section-title {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .about-carousel {
-    grid-auto-columns: minmax(82vw, 1fr);
   }
 
   .about-image {
