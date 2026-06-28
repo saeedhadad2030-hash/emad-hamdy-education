@@ -133,12 +133,14 @@ button {
   margin: 0;
   font-size: 22px;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .brand p {
   margin: 4px 0 0;
   color: var(--muted);
   font-weight: 700;
+  white-space: nowrap;
 }
 
 /* ═══════════════════════════════════════
@@ -885,10 +887,6 @@ button {
    ═══════════════════════════════════════ */
 
 .theme-toggle {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  z-index: 15;
   width: 44px;
   height: 44px;
   border: 1px solid var(--line);
