@@ -1498,7 +1498,7 @@
     if (ytId) {
       /* YouTube video — use IFrame API with custom controls */
       return `
-        <div class="video-container video-protected" data-yt-container>
+        <div class="video-container video-protected" data-yt-container oncontextmenu="return false;">
           <div class="video-box">
             <div id="yt-player-slot" data-yt-id="${ytId}"></div>
             <div class="video-drm-layer"></div>

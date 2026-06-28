@@ -1245,10 +1245,7 @@ body.video-modal-open {
   cursor: pointer;
 }
 
-.video-click-layer.controls-active {
-  /* When custom controls are active, only cover top portion to hide YT UI */
-  bottom: 60px;
-}
+
 
 .protection-note {
   margin-top: 10px;
