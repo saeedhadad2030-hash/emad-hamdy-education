@@ -446,23 +446,29 @@
     
     aboutCarouselTimer = setInterval(nextSlide, 5000);
     
-    const nextBtn = container.querySelector("[data-about-next]");
-    const prevBtn = container.querySelector("[data-about-prev]");
+    let touchStartX = 0;
+    let touchEndX = 0;
     
-    if (nextBtn) {
-      nextBtn.addEventListener("click", () => {
-        nextSlide();
-        clearInterval(aboutCarouselTimer);
-        aboutCarouselTimer = setInterval(nextSlide, 5000);
-      });
+    const stackArea = container.querySelector('.about-stack');
+    if (stackArea) {
+      stackArea.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, { passive: true });
+      
+      stackArea.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }, { passive: true });
     }
     
-    if (prevBtn) {
-      prevBtn.addEventListener("click", () => {
-        prevSlide();
+    function handleSwipe() {
+      const diff = touchEndX - touchStartX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0) nextSlide();
+        else prevSlide();
         clearInterval(aboutCarouselTimer);
         aboutCarouselTimer = setInterval(nextSlide, 5000);
-      });
+      }
     }
   }
 
@@ -694,9 +700,7 @@
           </div>
           ${entries.length > 1 ? `
             <div class="row" style="gap: 8px;">
-              <button class="btn icon ghost" data-about-prev title="السابق">▶</button>
               <span class="pill gold" id="about-carousel-counter">1 / ${entries.length}</span>
-              <button class="btn icon ghost" data-about-next title="التالي">◀</button>
             </div>
           ` : entries.length === 1 ? `<span class="pill gold">1 نبذة</span>` : ""}
         </div>
