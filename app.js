@@ -601,7 +601,7 @@
           </div>
         </aside>
       </section>
-      ${renderAboutSection()}
+      ${renderAboutStrip()}
       <section class="section">
         <div class="section-title">
           <h2>الكورسات الأكثر أهمية</h2>
@@ -620,12 +620,16 @@
     `;
   }
 
-  function renderAboutSection() {
+  function renderAboutStrip() {
     const entries = [...state.data.aboutEntries].sort((a, b) => {
       const order = Number(a.sort_order || a.sortOrder || 0) - Number(b.sort_order || b.sortOrder || 0);
       return order || new Date(b.created_at || 0) - new Date(a.created_at || 0);
     });
     if (!entries.length && !isAdmin()) return "";
+
+    const activeIndex = state.aboutSlideIndex || 0;
+    const entry = entries[activeIndex];
+
     return `
       <section class="section about-section">
         <div class="section-title">
@@ -633,25 +637,29 @@
             <h2>نبذة عن مستر عماد حمدي</h2>
             <p class="muted">لمحات وصور من رحلة الشرح والمتابعة مع الطلاب.</p>
           </div>
-          ${entries.length ? `<span class="pill gold">${entries.length} نبذة</span>` : ""}
+          ${entries.length > 1 ? `
+            <div class="row" style="gap: 8px;">
+              <button class="btn icon ghost" data-about-prev title="السابق">▶</button>
+              <span class="pill gold">${activeIndex + 1} / ${entries.length}</span>
+              <button class="btn icon ghost" data-about-next title="التالي">◀</button>
+            </div>
+          ` : entries.length === 1 ? `<span class="pill gold">1 نبذة</span>` : ""}
         </div>
         ${isAdmin() ? renderAboutComposer() : ""}
-        ${entries.length ? `
-          <div class="about-carousel">
-            ${entries.map((entry) => `
-              <article class="about-card">
-                ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
-                <div class="about-content">
-                  <span class="pill">مستر عماد حمدي</span>
-                  <h3>${escapeHtml(entry.title)}</h3>
-                  <p>${escapeHtml(entry.body)}</p>
-                  <div class="about-meta">
-                    <span>${formatDate(entry.created_at)}</span>
-                    ${isAdmin() ? `<button class="btn danger" data-delete-about="${entry.id}">حذف</button>` : ""}
-                  </div>
+        ${entry ? `
+          <div class="about-stack ${entries.length > 1 ? 'is-stacked' : ''}">
+            <article class="about-card active">
+              ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
+              <div class="about-content">
+                <span class="pill">مستر عماد حمدي</span>
+                <h3>${escapeHtml(entry.title)}</h3>
+                <p>${escapeHtml(entry.body)}</p>
+                <div class="about-meta">
+                  <span>${formatDate(entry.created_at)}</span>
+                  ${isAdmin() ? `<button class="btn danger" data-delete-about="${entry.id}">حذف</button>` : ""}
                 </div>
-              </article>
-            `).join("")}
+              </div>
+            </article>
           </div>
         ` : `<div class="empty">أضف أول نبذة للظهور في الصفحة الرئيسية.</div>`}
       </section>
@@ -1723,6 +1731,21 @@
     bindClicks("[data-toggle-student]", (node) => toggleStudentActive(node.dataset.toggleStudent));
     bindClicks("[data-course-scroll]", (node) => scrollCourses(node));
     bindClicks("[data-delete-about]", (node) => deleteAboutEntry(node.dataset.deleteAbout));
+    
+    bindClicks("[data-about-next]", () => {
+      const entries = state.data.aboutEntries;
+      if (!entries.length) return;
+      state.aboutSlideIndex = ((state.aboutSlideIndex || 0) + 1) % entries.length;
+      render();
+    });
+    
+    bindClicks("[data-about-prev]", () => {
+      const entries = state.data.aboutEntries;
+      if (!entries.length) return;
+      state.aboutSlideIndex = ((state.aboutSlideIndex || 0) - 1 + entries.length) % entries.length;
+      render();
+    });
+
     bindClicks("[data-enroll-status]", (node) => {
       const [id, status] = node.dataset.enrollStatus.split(":");
       updateEnrollment(id, status);
