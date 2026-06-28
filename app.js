@@ -22,6 +22,10 @@
     user: null,
     profile: null,
     dataLoading: false,
+    postSocialLoaded: false,
+    postSocialLoading: false,
+    lessonCommentsLoaded: new Set(),
+    lessonCommentsLoading: new Set(),
     loadingCourseId: null,
     courseLessonsLoaded: new Set(),
     courseLessonsLoading: new Set(),
@@ -241,6 +245,8 @@
     state.dataLoading = true;
     state.data = hasSupabase ? await loadSupabaseData() : emptyData();
     state.courseLessonsLoaded = new Set(isAdmin() ? state.data.courses.map((course) => course.id) : []);
+    state.postSocialLoaded = isAdmin();
+    state.lessonCommentsLoaded = isAdmin() ? new Set(state.data.lessons.map((lesson) => lesson.id)) : new Set();
     state.dataLoading = false;
   }
 
@@ -274,15 +280,15 @@
       aboutEntries,
       lessonCounts
     ] = await Promise.all([
-      selectTable("profiles", 500),
+      isAdmin() ? selectTable("profiles", 500) : Promise.resolve(state.profile ? [state.profile] : []),
       selectTable("courses", 200),
       selectTable("course_sections", 500),
       isAdmin() ? selectTable("lessons", 800) : Promise.resolve([]),
       selectTable("enrollments", 1000),
       selectTable("posts", 120),
-      selectTable("comments", 300),
-      selectTable("post_likes", 2000),
-      selectTable("support_messages", 200),
+      isAdmin() ? selectTable("comments", 500) : Promise.resolve([]),
+      isAdmin() ? selectTable("post_likes", 2000) : Promise.resolve([]),
+      isAdmin() ? selectTable("support_messages", 200) : Promise.resolve([]),
       selectTable("about_entries", 100),
       loadLessonCounts()
     ]);
@@ -847,6 +853,7 @@
     const canWatch = course && canAccessCourse(course.id);
     const isPaid = course && Number(course.price) > 0;
     const comments = state.data.comments.filter((comment) => comment.lesson_id === lesson.id || comment.lessonId === lesson.id);
+    const commentsLoading = state.lessonCommentsLoading.has(lesson.id);
     return `
       <section>
         <div class="section-title">
@@ -879,7 +886,7 @@
               <button class="btn" type="submit">إرسال تعليق</button>
             </form>
             <div class="list" style="margin-top:12px">
-              ${comments.map(renderComment).join("") || `<p class="muted">لا توجد تعليقات بعد.</p>`}
+              ${commentsLoading ? `<p class="muted">جاري تحميل التعليقات...</p>` : comments.map(renderComment).join("") || `<p class="muted">لا توجد تعليقات بعد.</p>`}
             </div>
           </div>
         </div>
@@ -893,7 +900,10 @@
       <section>
         <div class="section-title">
           <h2>المنشورات</h2>
-          <input class="search" data-search placeholder="ابحث في المنشورات" value="${escapeAttr(state.search)}" />
+          <div class="row">
+            ${state.postSocialLoading ? `<span class="pill gold">جاري تحميل التعليقات والإعجابات...</span>` : ""}
+            <input class="search" data-search placeholder="ابحث في المنشورات" value="${escapeAttr(state.search)}" />
+          </div>
         </div>
         ${isAdmin() ? renderPostComposer() : ""}
         <div class="grid two">${posts.map(renderPostCard).join("") || empty("لا توجد منشورات مطابقة.")}</div>
@@ -905,6 +915,8 @@
     const comments = state.data.comments.filter((comment) => comment.post_id === post.id || comment.postId === post.id);
     const likes = state.data.postLikes.filter((like) => (like.post_id || like.postId) === post.id);
     const isLiked = likes.some((like) => (like.user_id || like.userId) === state.user?.id);
+    const socialReady = state.postSocialLoaded || isAdmin();
+    const showSocial = state.route === "posts" || isAdmin();
     return `
       <article class="post-card">
         ${post.image_url ? `<div class="post-image" style="${bg(post.image_url)}"></div>` : ""}
@@ -912,33 +924,35 @@
           <span class="pill gold">مستر عماد حمدي</span>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.body)}</p>
-          <div class="post-reactions">
-            <button class="like-btn ${isLiked ? 'liked' : ''}" data-toggle-like="${post.id}">
-              ${isLiked ? '❤️' : '🤍'} <span>${likes.length}</span>
-            </button>
-            <span class="muted">${comments.length} تعليق</span>
-            <span class="muted">${formatDate(post.created_at)}</span>
-          </div>
-          <div class="post-comments-section">
-            <form class="form" data-post-comment-form="${post.id}">
-              <div class="comment-input-row">
-                <input class="field" name="body" placeholder="اكتب تعليق..." />
-                <button class="btn" type="submit">إرسال</button>
-              </div>
-            </form>
-            <div class="post-comments-list">
-              ${comments.slice(0, 5).map((comment) => {
-                const profile = findProfile(comment.user_id || comment.userId);
-                return `
-                  <div class="post-comment-item">
-                    <strong>${escapeHtml(profile?.full_name || 'طالب')}</strong>
-                    <p>${escapeHtml(comment.body)}</p>
-                  </div>
-                `;
-              }).join("") || ''}
-              ${comments.length > 5 ? `<span class="muted">و${comments.length - 5} تعليقات أخرى...</span>` : ''}
+          ${showSocial ? `
+            <div class="post-reactions">
+              <button class="like-btn ${isLiked ? 'liked' : ''}" data-toggle-like="${post.id}">
+                ${isLiked ? '❤️' : '🤍'} <span>${socialReady ? likes.length : "..."}</span>
+              </button>
+              <span class="muted">${socialReady ? `${comments.length} تعليق` : "التعليقات تتحمل..."}</span>
+              <span class="muted">${formatDate(post.created_at)}</span>
             </div>
-          </div>
+            <div class="post-comments-section">
+              <form class="form" data-post-comment-form="${post.id}">
+                <div class="comment-input-row">
+                  <input class="field" name="body" placeholder="اكتب تعليق..." />
+                  <button class="btn" type="submit">إرسال</button>
+                </div>
+              </form>
+              <div class="post-comments-list">
+                ${!socialReady ? `<span class="muted">جاري تحميل التعليقات...</span>` : comments.slice(0, 5).map((comment) => {
+                  const profile = findProfile(comment.user_id || comment.userId);
+                  return `
+                    <div class="post-comment-item">
+                      <strong>${escapeHtml(profile?.full_name || 'طالب')}</strong>
+                      <p>${escapeHtml(comment.body)}</p>
+                    </div>
+                  `;
+                }).join("") || ''}
+                ${comments.length > 5 ? `<span class="muted">و${comments.length - 5} تعليقات أخرى...</span>` : ''}
+              </div>
+            </div>
+          ` : `<div class="post-reactions"><span class="muted">${formatDate(post.created_at)}</span><button class="btn ghost" data-route="posts">عرض التعليقات</button></div>`}
           ${isAdmin() ? renderPostAdminActions(post) : ""}
         </div>
       </article>
@@ -1700,6 +1714,10 @@
     /* Initialize YouTube custom player if on a lesson page */
     if (state.route === "lesson") {
       setTimeout(initYouTubePlayer, 100);
+      ensureLessonComments(state.routeId);
+    }
+    if (state.route === "posts") {
+      ensurePostSocials();
     }
     if (state.route === "course" && state.routeId) {
       ensureCourseLessons(state.routeId);
@@ -1744,6 +1762,54 @@
       .filter((lesson) => !sectionIds.includes(lesson.sectionId) || !incomingIds.has(lesson.id))
       .concat(incoming);
     state.courseLessonsLoaded.add(courseId);
+  }
+
+  async function ensurePostSocials() {
+    if (!hasSupabase || state.postSocialLoaded || state.postSocialLoading) return;
+    state.postSocialLoading = true;
+    render();
+    await loadPostSocials();
+    state.postSocialLoaded = true;
+    state.postSocialLoading = false;
+    render();
+  }
+
+  async function loadPostSocials() {
+    const [commentsResult, likesResult] = await Promise.all([
+      client.from("comments").select("*").not("post_id", "is", null).order("created_at", { ascending: false }).limit(500),
+      client.from("post_likes").select("*").order("created_at", { ascending: false }).limit(2000)
+    ]);
+    if (commentsResult.error) console.warn(commentsResult.error);
+    if (likesResult.error) console.warn(likesResult.error);
+    const postComments = commentsResult.data || [];
+    state.data.comments = state.data.comments.filter((comment) => !(comment.post_id || comment.postId)).concat(postComments);
+    state.data.postLikes = likesResult.data || [];
+  }
+
+  async function ensureLessonComments(lessonId) {
+    if (!hasSupabase || !lessonId || state.lessonCommentsLoaded.has(lessonId) || state.lessonCommentsLoading.has(lessonId)) return;
+    state.lessonCommentsLoading.add(lessonId);
+    render();
+    await loadLessonComments(lessonId);
+    state.lessonCommentsLoading.delete(lessonId);
+    state.lessonCommentsLoaded.add(lessonId);
+    render();
+  }
+
+  async function loadLessonComments(lessonId) {
+    const { data, error } = await client
+      .from("comments")
+      .select("*")
+      .eq("lesson_id", lessonId)
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) {
+      console.warn(error);
+      return;
+    }
+    state.data.comments = state.data.comments
+      .filter((comment) => (comment.lesson_id || comment.lessonId) !== lessonId)
+      .concat(data || []);
   }
 
   function scrollCourses(button) {
@@ -2311,6 +2377,15 @@
     if (hasSupabase) {
       const { error } = await client.from("comments").insert(payload);
       if (error) return toast(error.message);
+      if (payload.post_id) {
+        state.postSocialLoaded = false;
+        await loadPostSocials();
+        state.postSocialLoaded = true;
+      }
+      if (payload.lesson_id) {
+        await loadLessonComments(payload.lesson_id);
+        state.lessonCommentsLoaded.add(payload.lesson_id);
+      }
     } else {
       fallbackStore.addComment({
         userId: state.user.id,
@@ -2319,7 +2394,8 @@
         body: payload.body
       });
     }
-    await reload("تم إضافة التعليق.");
+    toast("تم إضافة التعليق.");
+    render();
   }
 
   async function buyCourse(courseId) {
@@ -2401,7 +2477,7 @@
       render();
       if (hasSupabase) {
         const { error } = await client.from("post_likes").delete().eq("id", existing.id);
-        if (error) { toast(error.message); loadData().then(() => render()); return; }
+        if (error) { toast(error.message); loadPostSocials().then(() => render()); return; }
       }
     } else {
       /* Optimistic: add to local state immediately */
@@ -2413,8 +2489,14 @@
         if (error) { toast(error.message); }
       }
     }
-    /* Sync from server in background */
-    loadData().then(() => render());
+    if (hasSupabase) {
+      loadPostSocials().then(() => {
+        state.postSocialLoaded = true;
+        render();
+      });
+    } else {
+      render();
+    }
   }
 
   async function toggleStudentActive(studentId) {
