@@ -5,6 +5,14 @@
     ? window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey)
     : null;
   const fallbackStore = createFallbackStore();
+  const gradeOptions = [
+    "الأول الإعدادي",
+    "الثاني الإعدادي",
+    "الثالث الإعدادي",
+    "الأول الثانوي",
+    "الثاني الثانوي",
+    "الثالث الثانوي"
+  ];
 
   const state = {
     route: "home",
@@ -22,7 +30,8 @@
       posts: [],
       comments: [],
       postLikes: [],
-      supportMessages: []
+      supportMessages: [],
+      aboutEntries: []
     },
     busy: false
   };
@@ -204,6 +213,7 @@
 
   /* Listen for browser back/forward */
   window.addEventListener("hashchange", () => {
+    closeVideoViewer();
     restoreRouteFromHash();
     render();
   });
@@ -234,6 +244,7 @@
       comments: [],
       postLikes: [],
       supportMessages: [],
+      aboutEntries: [],
       lessonCounts: {}
     };
   }
@@ -249,6 +260,7 @@
       comments,
       postLikes,
       supportMessages,
+      aboutEntries,
       lessonCounts
     ] = await Promise.all([
       selectTable("profiles", 500),
@@ -260,6 +272,7 @@
       selectTable("comments", 300),
       selectTable("post_likes", 2000),
       selectTable("support_messages", 200),
+      selectTable("about_entries", 100),
       loadLessonCounts()
     ]);
 
@@ -273,6 +286,7 @@
       comments,
       postLikes,
       supportMessages,
+      aboutEntries,
       lessonCounts
     };
   }
@@ -383,14 +397,14 @@
             <label>البريد الإلكتروني<input class="field" name="email" type="email" required placeholder="name@example.com" /></label>
             <label>كلمة السر<input class="field" name="password" type="password" required minlength="6" placeholder="******" /></label>
             ${!isLogin ? `<label>رقم الموبايل<input class="field" name="phone" type="tel" required placeholder="01xxxxxxxxx" /></label>` : ""}
-            ${!isLogin ? `<label>الفصل الدراسي
-              <select class="select" name="semester" required>
-                <option value="">اختر الفصل الدراسي</option>
-                <option value="الفصل الدراسي الأول">الفصل الدراسي الأول</option>
-                <option value="الفصل الدراسي الثاني">الفصل الدراسي الثاني</option>
+            ${!isLogin ? `<label>الصف
+              <select class="select" name="grade" required>
+                <option value="">اختر الصف</option>
+                ${renderGradeOptions()}
               </select>
             </label>` : ""}
             <button class="btn gold" type="submit">${isLogin ? "دخول" : "تسجيل"}</button>
+            <p class="auth-credit">تم تصميم وتطوير المنصة بواسطة <a href="https://instagram.com/saeed_hadad1" target="_blank" rel="noreferrer">سعيد حداد</a></p>
           </form>
         </section>
       </div>
@@ -530,6 +544,7 @@
           </div>
         </aside>
       </section>
+      ${renderAboutSection()}
       <section class="section">
         <div class="section-title">
           <h2>الكورسات الأكثر أهمية</h2>
@@ -548,6 +563,65 @@
     `;
   }
 
+  function renderAboutSection() {
+    const entries = [...state.data.aboutEntries].sort((a, b) => {
+      const order = Number(a.sort_order || a.sortOrder || 0) - Number(b.sort_order || b.sortOrder || 0);
+      return order || new Date(b.created_at || 0) - new Date(a.created_at || 0);
+    });
+    if (!entries.length && !isAdmin()) return "";
+    return `
+      <section class="section about-section">
+        <div class="section-title">
+          <div>
+            <h2>نبذة عن مستر عماد حمدي</h2>
+            <p class="muted">لمحات وصور من رحلة الشرح والمتابعة مع الطلاب.</p>
+          </div>
+          ${entries.length ? `<span class="pill gold">${entries.length} نبذة</span>` : ""}
+        </div>
+        ${isAdmin() ? renderAboutComposer() : ""}
+        ${entries.length ? `
+          <div class="about-carousel">
+            ${entries.map((entry) => `
+              <article class="about-card">
+                ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
+                <div class="about-content">
+                  <span class="pill">مستر عماد حمدي</span>
+                  <h3>${escapeHtml(entry.title)}</h3>
+                  <p>${escapeHtml(entry.body)}</p>
+                  <div class="about-meta">
+                    <span>${formatDate(entry.created_at)}</span>
+                    ${isAdmin() ? `<button class="btn danger" data-delete-about="${entry.id}">حذف</button>` : ""}
+                  </div>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        ` : `<div class="empty">أضف أول نبذة للظهور في الصفحة الرئيسية.</div>`}
+      </section>
+    `;
+  }
+
+  function renderAboutComposer() {
+    return `
+      <div class="admin-box about-composer">
+        <div class="composer-header">
+          <div>
+            <h3>إضافة نبذة عني</h3>
+            <span class="muted">اكتب نبذة وارفع صورة، وستظهر للطلاب في الرئيسية.</span>
+          </div>
+        </div>
+        <form class="form" data-about-form>
+          <div class="admin-grid">
+            <input class="field" name="title" required placeholder="عنوان النبذة" />
+            <label>صورة من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+          </div>
+          <textarea class="textarea" name="body" required placeholder="اكتب التفاصيل هنا..."></textarea>
+          <button class="btn gold" type="submit">إضافة النبذة</button>
+        </form>
+      </div>
+    `;
+  }
+
   function renderCourses() {
     const courses = filterBySearch(visibleCourses(), ["title", "grade", "description"]);
     return `
@@ -563,6 +637,12 @@
         ${renderCourseStrip(courses)}
       </section>
     `;
+  }
+
+  function renderGradeOptions(selected = "") {
+    return gradeOptions
+      .map((grade) => `<option value="${escapeAttr(grade)}" ${grade === selected ? "selected" : ""}>${escapeHtml(grade)}</option>`)
+      .join("");
   }
 
   function renderCourseStrip(courses) {
@@ -944,7 +1024,12 @@
           </div>
           <div class="admin-grid">
             <label>اسم الكورس *<input class="field" name="title" required placeholder="مثال: تاريخ الصف الثالث الثانوي" /></label>
-            <label>الصف الدراسي<input class="field" name="grade" placeholder="مثال: الثالث الثانوي" /></label>
+            <label>الصف الدراسي
+              <select class="select" name="grade" required>
+                <option value="">اختر الصف</option>
+                ${renderGradeOptions()}
+              </select>
+            </label>
           </div>
           <label>وصف الكورس *<textarea class="textarea" name="description" required placeholder="اكتب وصف مختصر للطلاب عن محتوى الكورس"></textarea></label>
 
@@ -1154,7 +1239,7 @@
           <strong>${escapeHtml(student.full_name)}</strong>
           <span class="muted">اليوزر: ${escapeHtml(student.email)}</span>
           ${student.phone ? `<span class="muted">📱 الموبايل: ${escapeHtml(student.phone)}</span>` : ''}
-          ${student.semester ? `<span class="muted">📚 ${escapeHtml(student.semester)}</span>` : ''}
+          ${studentGrade(student) ? `<span class="muted">📚 الصف: ${escapeHtml(studentGrade(student))}</span>` : ''}
           <span class="muted">ID: ${escapeHtml(student.id)}</span>
           <span class="pill gold">الباسورد: ${escapeHtml(passwordText)}</span>
           <div class="student-actions">
@@ -1289,7 +1374,9 @@
             <div class="video-volume-bar" data-yt-volume>
               <div class="video-volume-fill" data-yt-volume-fill></div>
             </div>
-            <button data-yt-fs title="ملء الشاشة">⛶</button>
+            <button data-yt-wide title="وضع عرضي">▭</button>
+            <button data-yt-tall title="وضع طولي">▯</button>
+            <button data-yt-fs title="تكبير الفيديو">⛶</button>
           </div>
         </div>
         <p class="muted protection-note">الفيديو محمي بعلامة مائية باسمك. أي مشاركة غير مصرح بها ستكون واضحة.</p>
@@ -1407,17 +1494,21 @@
       if (fill) fill.style.width = (ratio * 100) + "%";
     });
 
-    /* Fullscreen */
+    /* Large viewer */
     const fsBtn = document.querySelector("[data-yt-fs]");
     if (fsBtn) fsBtn.addEventListener("click", () => {
       const container = document.querySelector("[data-yt-container]");
       if (!container) return;
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        container.requestFullscreen().catch(() => {});
-      }
+      const expanded = container.classList.toggle("video-expanded");
+      document.body.classList.toggle("video-modal-open", expanded);
+      fsBtn.textContent = expanded ? "×" : "⛶";
     });
+
+    const wideBtn = document.querySelector("[data-yt-wide]");
+    if (wideBtn) wideBtn.addEventListener("click", () => setVideoAspect("wide"));
+
+    const tallBtn = document.querySelector("[data-yt-tall]");
+    if (tallBtn) tallBtn.addEventListener("click", () => setVideoAspect("tall"));
 
     /* Skip forward / backward */
     document.querySelectorAll("[data-yt-skip]").forEach((btn) => {
@@ -1446,6 +1537,23 @@
       ytPlayer.playVideo();
     }
   }
+
+  function setVideoAspect(mode) {
+    const container = document.querySelector("[data-yt-container]");
+    if (!container) return;
+    container.classList.toggle("video-portrait", mode === "tall");
+    container.classList.toggle("video-landscape", mode !== "tall");
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const container = document.querySelector("[data-yt-container].video-expanded");
+    if (!container) return;
+    container.classList.remove("video-expanded");
+    document.body.classList.remove("video-modal-open");
+    const fsBtn = document.querySelector("[data-yt-fs]");
+    if (fsBtn) fsBtn.textContent = "⛶";
+  });
 
   function startYTProgress() {
     stopYTProgress();
@@ -1532,6 +1640,7 @@
     bindClicks("[data-toggle-like]", (node) => toggleLike(node.dataset.toggleLike));
     bindClicks("[data-toggle-student]", (node) => toggleStudentActive(node.dataset.toggleStudent));
     bindClicks("[data-course-scroll]", (node) => scrollCourses(node));
+    bindClicks("[data-delete-about]", (node) => deleteAboutEntry(node.dataset.deleteAbout));
     bindClicks("[data-enroll-status]", (node) => {
       const [id, status] = node.dataset.enrollStatus.split(":");
       updateEnrollment(id, status);
@@ -1551,6 +1660,7 @@
     bindForms("[data-section-form]", (form) => addSection(form.dataset.sectionForm, form));
     bindForms("[data-lesson-form]", (form) => addLesson(form.dataset.lessonForm, form));
     bindForm("[data-post-form]", addPost);
+    bindForm("[data-about-form]", addAboutEntry);
     bindForm("[data-support-form]", addSupportMessage);
     bindForm("[data-manual-enrollment-form]", saveManualEnrollment);
     bindForms("[data-comment-form]", (form) => addLessonComment(form.dataset.commentForm, form));
@@ -1630,12 +1740,12 @@
       const { data, error } = await client.auth.signUp({
         email: values.email,
         password: values.password,
-        options: { data: { full_name: values.name, login_password: values.password, phone: values.phone || '', semester: values.semester || '' } }
+        options: { data: { full_name: values.name, login_password: values.password, phone: values.phone || '', grade: values.grade || '' } }
       });
       if (error) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast(friendlyAuthError(error.message)); }
       if (!data.user) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast("حدث خطأ غير متوقع. حاول مرة أخرى."); }
       state.user = data.user;
-      state.profile = await getOrCreateProfile(data.user, values.name, values.phone, values.semester);
+      state.profile = await getOrCreateProfile(data.user, values.name, values.phone, values.grade);
     } else {
       const { data, error } = await client.auth.signInWithPassword({
         email: values.email,
@@ -1683,7 +1793,7 @@
     return msg || "حدث خطأ. حاول مرة أخرى.";
   }
 
-  async function getOrCreateProfile(user, name = "", phone = "", semester = "") {
+  async function getOrCreateProfile(user, name = "", phone = "", grade = "") {
     const { data } = await client.from("profiles").select("*").eq("id", user.id).maybeSingle();
     if (data) return data;
     const profile = {
@@ -1693,7 +1803,8 @@
       role: "student",
       login_password: user.user_metadata?.login_password || "",
       phone: phone || user.user_metadata?.phone || "",
-      semester: semester || user.user_metadata?.semester || "",
+      grade: grade || user.user_metadata?.grade || user.user_metadata?.semester || "",
+      semester: user.user_metadata?.semester || "",
       is_active: true
     };
     const { error } = await client.from("profiles").insert(profile);
@@ -1839,6 +1950,36 @@
       fallbackStore.addPost(record);
     }
     await reload("تم نشر المنشور.");
+  }
+
+  async function addAboutEntry(form) {
+    const values = formValues(form);
+    const imageFile = form.elements.imageFile?.files?.[0];
+    const uploadedImage = imageFile ? await fileToAssetUrl(imageFile, "about-images") : "";
+    const record = {
+      title: values.title,
+      body: values.body,
+      image_url: uploadedImage,
+      sort_order: state.data.aboutEntries.length + 1
+    };
+    if (hasSupabase) {
+      const { error } = await client.from("about_entries").insert(record);
+      if (error) return toast(error.message);
+    } else {
+      state.data.aboutEntries.unshift({ ...record, id: "about-" + Date.now(), created_at: new Date().toISOString() });
+    }
+    await reload("تم إضافة النبذة.");
+  }
+
+  async function deleteAboutEntry(entryId) {
+    if (!confirm("حذف هذه النبذة؟")) return;
+    if (hasSupabase) {
+      const { error } = await client.from("about_entries").delete().eq("id", entryId);
+      if (error) return toast(error.message);
+    } else {
+      state.data.aboutEntries = state.data.aboutEntries.filter((entry) => entry.id !== entryId);
+    }
+    await reload("تم حذف النبذة.");
   }
 
   function fileToDataUrl(file) {
@@ -2116,43 +2257,31 @@
   async function buyCourse(courseId) {
     const course = state.data.courses.find((item) => item.id === courseId);
     if (!course) return;
+    const whatsappLink = whatsappCourseLink(course);
+    window.open(whatsappLink, "_blank", "noopener,noreferrer");
     const current = getEnrollment(courseId);
-    if (!current) {
-      if (hasSupabase) {
-        const { error } = await client.from("enrollments").insert({
-          user_id: state.user.id,
-          course_id: courseId,
-          status: "pending"
-        });
-        if (error) toast(error.message);
-      } else {
-        fallbackStore.addEnrollment({ userId: state.user.id, courseId, status: "pending" });
-      }
-      await loadData();
+    if (!current || current.status === "rejected") {
+      await saveEnrollment(state.user.id, courseId, "pending", { silent: true });
     }
-    window.open(whatsappCourseLink(course), "_blank", "noopener,noreferrer");
-    toast("تم تسجيل طلبك، وسيتم فتح واتساب لإرسال بيانات الشراء.");
+    await loadData();
+    toast("تم فتح واتساب برسالة الشراء الجاهزة.");
     render();
   }
 
   async function activateFreeCourse(courseId) {
-    await saveEnrollment(state.user.id, courseId, "active");
-    await reload("تم إضافة الكورس المجاني إلى مكتبتك.");
+    toast("الكورس مجاني ومتاح لك الآن.");
     navigate("course", courseId);
   }
 
-  async function saveEnrollment(userId, courseId, status) {
+  async function saveEnrollment(userId, courseId, status, options = {}) {
     const existing = state.data.enrollments.find((item) => {
       return (item.user_id || item.userId) === userId && (item.course_id || item.courseId) === courseId;
     });
     if (hasSupabase) {
-      if (existing) {
-        const { error } = await client.from("enrollments").update({ status }).eq("id", existing.id);
-        if (error) return toast(error.message);
-      } else {
-        const { error } = await client.from("enrollments").insert({ user_id: userId, course_id: courseId, status });
-        if (error) return toast(error.message);
-      }
+      const { error } = await client
+        .from("enrollments")
+        .upsert({ user_id: userId, course_id: courseId, status }, { onConflict: "user_id,course_id" });
+      if (error && !options.silent) return toast(error.message);
     } else if (existing) {
       fallbackStore.updateEnrollment(existing.id, status);
     } else {
@@ -2245,6 +2374,7 @@
   }
 
   function navigate(route, id = null) {
+    closeVideoViewer();
     state.route = route;
     state.routeId = id;
     state.search = "";
@@ -2253,6 +2383,11 @@
     history.replaceState(null, "", `#${hash}`);
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeVideoViewer() {
+    document.body.classList.remove("video-modal-open");
+    document.querySelectorAll(".video-expanded").forEach((node) => node.classList.remove("video-expanded"));
   }
 
   function filterBySearch(items, keys) {
@@ -2312,23 +2447,27 @@
     return Number(course.price) <= 0 ? "مجاني" : `${course.price} جنيه / الكورس`;
   }
 
+  function studentGrade(profile = state.profile) {
+    return profile?.grade || profile?.semester || "";
+  }
+
   function whatsappCourseLink(course) {
     const message = [
-      `━━━━━━━━━━━━━━━━`,
-      `📚 *طلب اشتراك في كورس*`,
-      `━━━━━━━━━━━━━━━━`,
+      `السلام عليكم مستر عماد حمدي،`,
       ``,
-      `👤 *الاسم:* ${state.profile.full_name}`,
-      `📧 *البريد:* ${state.profile.email}`,
-      `📱 *الموبايل:* ${state.profile.phone || 'غير مسجل'}`,
+      `أريد الاشتراك في الكورس التالي:`,
+      `• الكورس: ${course.title}`,
+      `• السعر: ${priceText(course)}`,
+      `• صف الكورس: ${course.grade || 'عام'}`,
       ``,
-      `📖 *الكورس:* ${course.title}`,
-      `🏷️ *الصف:* ${course.grade || 'عام'}`,
-      `💰 *السعر:* ${course.price} جنيه`,
+      `بيانات الطالب:`,
+      `• الاسم: ${state.profile.full_name}`,
+      `• البريد الإلكتروني: ${state.profile.email}`,
+      `• رقم الموبايل: ${state.profile.phone || 'غير مسجل'}`,
+      `• الصف: ${studentGrade() || 'غير مسجل'}`,
+      `• ID الطالب: ${state.profile.id}`,
       ``,
-      `━━━━━━━━━━━━━━━━`,
-      `أرجو تفعيل اشتراكي بعد الدفع.`,
-      `شكراً لكم 🙏`
+      `بعد الدفع، برجاء تفعيل الكورس لهذا الحساب.`
     ].join("\n");
     return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }

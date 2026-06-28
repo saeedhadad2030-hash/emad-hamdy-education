@@ -23,6 +23,13 @@ alter table public.profiles
   add column if not exists semester text not null default '';
 
 alter table public.profiles
+  add column if not exists grade text not null default '';
+
+update public.profiles
+set grade = semester
+where coalesce(grade, '') = '' and coalesce(semester, '') <> '';
+
+alter table public.profiles
   add column if not exists is_active boolean not null default true;
 
 create table if not exists public.app_settings (
@@ -115,6 +122,15 @@ create table if not exists public.post_likes (
   unique (user_id, post_id)
 );
 
+create table if not exists public.about_entries (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  body text not null,
+  image_url text not null default '',
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.support_messages (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
@@ -149,7 +165,7 @@ begin
   select value into admin_email from public.app_settings where key = 'initial_admin_email';
   select value into admin_password from public.app_settings where key = 'initial_admin_password';
 
-  insert into public.profiles (id, full_name, email, login_password, phone, semester, role)
+  insert into public.profiles (id, full_name, email, login_password, phone, semester, grade, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
@@ -160,6 +176,7 @@ begin
     ),
     coalesce(new.raw_user_meta_data->>'phone', ''),
     coalesce(new.raw_user_meta_data->>'semester', ''),
+    coalesce(new.raw_user_meta_data->>'grade', new.raw_user_meta_data->>'semester', ''),
     case when lower(new.email) = lower(admin_email) then 'admin' else 'student' end
   )
   on conflict (id) do nothing;
@@ -203,6 +220,7 @@ alter table public.enrollments enable row level security;
 alter table public.posts enable row level security;
 alter table public.comments enable row level security;
 alter table public.post_likes enable row level security;
+alter table public.about_entries enable row level security;
 alter table public.support_messages enable row level security;
 
 drop policy if exists "course assets public read" on storage.objects;
@@ -222,68 +240,120 @@ drop policy if exists "admins delete course assets" on storage.objects;
 create policy "admins delete course assets" on storage.objects
   for delete using (bucket_id = 'course-assets' and public.is_admin());
 
+drop policy if exists "profiles read own or admin" on public.profiles;
 create policy "profiles read own or admin" on public.profiles
   for select using (id = auth.uid() or public.is_admin());
+drop policy if exists "profiles insert own student" on public.profiles;
 create policy "profiles insert own student" on public.profiles
   for insert with check (
     id = auth.uid()
     and email = (auth.jwt() ->> 'email')
     and role = 'student'
   );
+drop policy if exists "profiles update admin only" on public.profiles;
 create policy "profiles update admin only" on public.profiles
   for update using (public.is_admin());
 
+drop policy if exists "published courses are public" on public.courses;
 create policy "published courses are public" on public.courses
   for select using (is_published = true or public.is_admin());
+drop policy if exists "admins manage courses" on public.courses;
 create policy "admins manage courses" on public.courses
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "sections visible for published courses" on public.course_sections;
 create policy "sections visible for published courses" on public.course_sections
   for select using (
     exists (select 1 from public.courses c where c.id = course_id and (c.is_published or public.is_admin()))
   );
+drop policy if exists "admins manage sections" on public.course_sections;
 create policy "admins manage sections" on public.course_sections
   for all using (public.is_admin()) with check (public.is_admin());
 
-create policy "lessons visible to all authenticated users" on public.lessons
+drop policy if exists "lessons visible to all authenticated users" on public.lessons;
+drop policy if exists "lessons visible to active students" on public.lessons;
+create policy "lessons visible to active students" on public.lessons
   for select using (
-    auth.uid() is not null
+    public.is_admin()
+    or exists (
+      select 1
+      from public.course_sections s
+      join public.courses c on c.id = s.course_id
+      where s.id = section_id
+        and c.is_published = true
+        and (
+          c.price <= 0
+          or exists (
+            select 1
+            from public.enrollments e
+            where e.course_id = c.id
+              and e.user_id = auth.uid()
+              and e.status = 'active'
+          )
+        )
+    )
   );
+drop policy if exists "admins manage lessons" on public.lessons;
 create policy "admins manage lessons" on public.lessons
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "enrollments visible own or admin" on public.enrollments;
 create policy "enrollments visible own or admin" on public.enrollments
   for select using (user_id = auth.uid() or public.is_admin());
+drop policy if exists "students request enrollment" on public.enrollments;
 create policy "students request enrollment" on public.enrollments
   for insert with check (user_id = auth.uid());
+drop policy if exists "students update pending enrollment" on public.enrollments;
+create policy "students update pending enrollment" on public.enrollments
+  for update using (user_id = auth.uid())
+  with check (user_id = auth.uid() and status = 'pending');
+drop policy if exists "admins manage enrollments" on public.enrollments;
 create policy "admins manage enrollments" on public.enrollments
-  for update using (public.is_admin()) with check (public.is_admin());
+  for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "published posts are public" on public.posts;
 create policy "published posts are public" on public.posts
   for select using (is_published = true or public.is_admin());
+drop policy if exists "admins manage posts" on public.posts;
 create policy "admins manage posts" on public.posts
   for all using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "comments read signed in" on public.comments;
 create policy "comments read signed in" on public.comments
   for select using (auth.uid() is not null);
+drop policy if exists "comments insert own" on public.comments;
 create policy "comments insert own" on public.comments
   for insert with check (user_id = auth.uid());
+drop policy if exists "comments manage own or admin" on public.comments;
 create policy "comments manage own or admin" on public.comments
   for update using (user_id = auth.uid() or public.is_admin());
 
+drop policy if exists "support insert public" on public.support_messages;
 create policy "support insert public" on public.support_messages
   for insert with check (user_id is null or user_id = auth.uid());
+drop policy if exists "support read own or admin" on public.support_messages;
 create policy "support read own or admin" on public.support_messages
   for select using (user_id = auth.uid() or public.is_admin());
+drop policy if exists "support admin update" on public.support_messages;
 create policy "support admin update" on public.support_messages
   for update using (public.is_admin()) with check (public.is_admin());
 
+drop policy if exists "likes read all" on public.post_likes;
 create policy "likes read all" on public.post_likes
   for select using (auth.uid() is not null);
+drop policy if exists "likes insert own" on public.post_likes;
 create policy "likes insert own" on public.post_likes
   for insert with check (user_id = auth.uid());
+drop policy if exists "likes delete own" on public.post_likes;
 create policy "likes delete own" on public.post_likes
   for delete using (user_id = auth.uid());
+
+drop policy if exists "about entries read signed in" on public.about_entries;
+create policy "about entries read signed in" on public.about_entries
+  for select using (auth.uid() is not null or public.is_admin());
+drop policy if exists "admins manage about entries" on public.about_entries;
+create policy "admins manage about entries" on public.about_entries
+  for all using (public.is_admin()) with check (public.is_admin());
 
 -- Function to count lessons per course (bypasses RLS so students see video counts)
 create or replace function public.get_course_lesson_counts()
