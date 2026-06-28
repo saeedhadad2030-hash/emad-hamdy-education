@@ -740,6 +740,20 @@ button {
   text-decoration: none;
 }
 
+.data-loading {
+  min-height: min(420px, 70vh);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.data-loading h2,
+.data-loading p {
+  margin: 0;
+}
+
 .tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;

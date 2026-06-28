@@ -21,6 +21,10 @@
     authMode: "login",
     user: null,
     profile: null,
+    dataLoading: false,
+    loadingCourseId: null,
+    courseLessonsLoaded: new Set(),
+    courseLessonsLoading: new Set(),
     data: {
       profiles: [],
       courses: [],
@@ -179,9 +183,13 @@
       await loadSession();
       if (state.user) {
         /* Don't await data — render immediately then load in background */
+        state.dataLoading = true;
         state.data = emptyData();
         render();
-        loadData().then(() => render());
+        loadData().then(() => {
+          state.dataLoading = false;
+          render();
+        });
       } else {
         state.data = emptyData();
       }
@@ -230,7 +238,10 @@
   }
 
   async function loadData() {
+    state.dataLoading = true;
     state.data = hasSupabase ? await loadSupabaseData() : emptyData();
+    state.courseLessonsLoaded = new Set(isAdmin() ? state.data.courses.map((course) => course.id) : []);
+    state.dataLoading = false;
   }
 
   function emptyData() {
@@ -266,7 +277,7 @@
       selectTable("profiles", 500),
       selectTable("courses", 200),
       selectTable("course_sections", 500),
-      selectTable("lessons", 800),
+      isAdmin() ? selectTable("lessons", 800) : Promise.resolve([]),
       selectTable("enrollments", 1000),
       selectTable("posts", 120),
       selectTable("comments", 300),
@@ -404,7 +415,7 @@
               </select>
             </label>` : ""}
             <button class="btn gold" type="submit">${isLogin ? "دخول" : "تسجيل"}</button>
-            <p class="auth-credit">تم تصميم وتطوير المنصة بواسطة <a href="https://instagram.com/saeed_hadad1" target="_blank" rel="noreferrer">سعيد حداد</a></p>
+            <p class="auth-credit">تم تصميم وتطوير المنصة بواسطة <a href="https://instagram.com/saeed_hadad1" target="_blank" rel="noreferrer">saeed hadad</a></p>
           </form>
         </section>
       </div>
@@ -512,6 +523,7 @@
   }
 
   function renderRoute() {
+    if (state.dataLoading) return renderDataLoading();
     if (state.route === "courses") return renderCourses();
     if (state.route === "course") return renderCourseDetails(state.routeId);
     if (state.route === "lesson") return renderLesson(state.routeId);
@@ -520,6 +532,16 @@
     if (state.route === "students") return renderStudentsAdmin();
     if (state.route === "more") return renderMore();
     return renderHome();
+  }
+
+  function renderDataLoading() {
+    return `
+      <section class="data-loading card">
+        <div class="splash-loader"></div>
+        <h2>جاري تحميل بيانات المنصة</h2>
+        <p class="muted">بنجهز الكورسات والمنشورات لحسابك الآن.</p>
+      </section>
+    `;
   }
 
   function renderHome() {
@@ -705,7 +727,8 @@
     const canWatch = canAccessCourse(course.id);
     const isPaid = Number(course.price) > 0;
     const enrollment = getEnrollment(course.id);
-    const totalLessons = sections.reduce((sum, s) => sum + state.data.lessons.filter(l => l.sectionId === s.id).length, 0);
+    const totalLessons = countLessons(course.id);
+    const lessonsLoading = state.loadingCourseId === course.id || state.courseLessonsLoading.has(course.id);
     return `
       <section>
         <div class="section-title">
@@ -747,7 +770,7 @@
         ${isAdmin() ? renderSectionEditor(course.id) : ''}
         <div class="list">
           ${sections
-            .map((section) => renderSectionBlock(section, canWatch))
+            .map((section) => renderSectionBlock(section, canWatch, lessonsLoading))
             .join('') || empty('لا توجد أقسام في هذا الكورس بعد.')}
         </div>
         ${renderCourseAttachments(course)}
@@ -769,7 +792,7 @@
     `;
   }
 
-  function renderSectionBlock(section, canWatch) {
+  function renderSectionBlock(section, canWatch, lessonsLoading = false) {
     const lessons = state.data.lessons
       .filter((lesson) => lesson.sectionId === section.id)
       .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -779,7 +802,7 @@
         <div class="section-title">
           <div>
             <h3>📁 ${escapeHtml(section.title)}</h3>
-            <span class="pill">${lessons.length} فيديو</span>
+            <span class="pill">${lessonsLoading ? "جاري التحميل..." : `${lessons.length} فيديو`}</span>
           </div>
           ${isAdmin() ? `
             <div class="row">
@@ -791,7 +814,9 @@
         </div>
         ${isAdmin() ? renderLessonEditor(section.id) : ""}
         <div class="grid two">
-          ${lessons
+          ${lessonsLoading
+            ? `<div class="empty">جاري تحميل فيديوهات القسم...</div>`
+            : lessons
             .map((lesson) => `
               <article class="lesson-card">
                 <div class="lesson-thumb" style="${bg(lesson.thumbnailUrl)}"></div>
@@ -1621,7 +1646,7 @@
       });
     }
 
-    bindClicks("[data-open-course]", (node) => navigate("course", node.dataset.openCourse));
+    bindClicks("[data-open-course]", (node) => openCourse(node.dataset.openCourse));
     bindClicks("[data-open-lesson]", (node) => navigate("lesson", node.dataset.openLesson));
     bindClicks("[data-buy-course]", (node) => buyCourse(node.dataset.buyCourse));
     bindClicks("[data-free-course]", (node) => activateFreeCourse(node.dataset.freeCourse));
@@ -1676,6 +1701,49 @@
     if (state.route === "lesson") {
       setTimeout(initYouTubePlayer, 100);
     }
+    if (state.route === "course" && state.routeId) {
+      ensureCourseLessons(state.routeId);
+    }
+  }
+
+  async function openCourse(courseId) {
+    navigate("course", courseId);
+    await ensureCourseLessons(courseId);
+  }
+
+  async function ensureCourseLessons(courseId) {
+    if (!hasSupabase || !courseId || state.courseLessonsLoaded.has(courseId) || state.courseLessonsLoading.has(courseId)) return;
+    state.courseLessonsLoading.add(courseId);
+    state.loadingCourseId = courseId;
+    render();
+    await loadCourseLessons(courseId);
+    state.courseLessonsLoading.delete(courseId);
+    state.loadingCourseId = null;
+    render();
+  }
+
+  async function loadCourseLessons(courseId) {
+    const sectionIds = state.data.sections.filter((section) => section.courseId === courseId).map((section) => section.id);
+    if (!sectionIds.length) {
+      state.courseLessonsLoaded.add(courseId);
+      return;
+    }
+    const { data, error } = await client
+      .from("lessons")
+      .select("*")
+      .in("section_id", sectionIds)
+      .order("sort_order", { ascending: true });
+    if (error) {
+      console.warn(error);
+      toast("تعذر تحميل فيديوهات الكورس. تأكد من تشغيل SQL الجديد في Supabase.");
+      return;
+    }
+    const incoming = (data || []).map(mapLesson);
+    const incomingIds = new Set(incoming.map((lesson) => lesson.id));
+    state.data.lessons = state.data.lessons
+      .filter((lesson) => !sectionIds.includes(lesson.sectionId) || !incomingIds.has(lesson.id))
+      .concat(incoming);
+    state.courseLessonsLoaded.add(courseId);
   }
 
   function scrollCourses(button) {
