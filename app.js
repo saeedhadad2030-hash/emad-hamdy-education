@@ -1782,7 +1782,13 @@
     if (search) {
       search.addEventListener("input", (event) => {
         state.search = event.target.value;
+        const cursorPosition = event.target.selectionStart;
         render();
+        const newSearch = document.querySelector("[data-search]");
+        if (newSearch) {
+          newSearch.focus();
+          newSearch.setSelectionRange(cursorPosition, cursorPosition);
+        }
       });
     }
     
