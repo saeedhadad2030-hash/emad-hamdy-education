@@ -557,10 +557,24 @@
 
   function renderDataLoading() {
     return `
-      <section class="data-loading card">
-        <div class="splash-loader"></div>
-        <h2>جاري تحميل بيانات المنصة</h2>
-        <p class="muted">بنجهز الكورسات والمنشورات لحسابك الآن.</p>
+      <section class="hero skeleton-box" style="height: 250px; border-radius: 16px; margin-bottom: 24px;"></section>
+      <section class="section">
+        <div class="section-title">
+          <div class="skeleton-box" style="height: 30px; width: 200px; border-radius: 4px;"></div>
+        </div>
+        <div class="course-grid">
+          ${Array(3).fill(`
+            <article class="course-card">
+              <div class="skeleton-box" style="height: 160px; border-radius: 12px 12px 0 0;"></div>
+              <div class="course-body">
+                <div class="skeleton-box" style="height: 20px; width: 60px; border-radius: 4px; margin-bottom: 12px;"></div>
+                <div class="skeleton-box" style="height: 24px; width: 80%; border-radius: 4px; margin-bottom: 8px;"></div>
+                <div class="skeleton-box" style="height: 16px; width: 100%; border-radius: 4px; margin-bottom: 16px;"></div>
+                <div class="skeleton-box" style="height: 40px; width: 100%; border-radius: 8px;"></div>
+              </div>
+            </article>
+          `).join("")}
+        </div>
       </section>
     `;
   }

@@ -644,6 +644,17 @@ button {
   font-weight: 900;
 }
 
+/* Skeleton Loading Animation */
+.skeleton-box {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--input-bg) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s infinite;
+}
+@keyframes skeletonLoading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 /* ═══════════════════════════════════════
    FORMS / SEARCH
    ═══════════════════════════════════════ */
