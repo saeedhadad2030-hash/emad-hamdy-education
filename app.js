@@ -1697,6 +1697,11 @@
         render();
       });
     }
+    
+    bindClicks("[data-toggle-course-form]", () => {
+      const area = document.querySelector("[data-course-form-area]");
+      if (area) area.style.display = area.style.display === "none" ? "block" : "none";
+    });
 
     bindClicks("[data-open-course]", (node) => openCourse(node.dataset.openCourse));
     bindClicks("[data-open-lesson]", (node) => navigate("lesson", node.dataset.openLesson));
