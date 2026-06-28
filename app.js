@@ -21,6 +21,7 @@
       enrollments: [],
       posts: [],
       comments: [],
+      postLikes: [],
       supportMessages: []
     },
     busy: false
@@ -158,11 +159,20 @@
   async function boot() {
     restoreTheme();
     renderSplash();
+
+    /* Splash shows for exactly 3 seconds then fades — regardless of loading */
+    const splashTimer = setTimeout(() => {
+      const splash = document.querySelector(".splash");
+      if (splash) splash.classList.add("hide");
+    }, 3000);
+
     try {
       await loadSession();
-      /* Only load data if user is logged in — login page doesn't need data */
       if (state.user) {
-        await loadData();
+        /* Don't await data — render immediately then load in background */
+        state.data = emptyData();
+        render();
+        loadData().then(() => render());
       } else {
         state.data = emptyData();
       }
@@ -170,8 +180,12 @@
     } catch (err) {
       console.error("Boot error:", err);
     }
+
+    /* If splash already hidden by timer, this is a no-op */
     const splash = document.querySelector(".splash");
-    if (splash) splash.classList.add("hide");
+    if (splash && !splash.classList.contains("hide")) {
+      splash.classList.add("hide");
+    }
     render();
   }
 
@@ -218,6 +232,7 @@
       enrollments: [],
       posts: [],
       comments: [],
+      postLikes: [],
       supportMessages: [],
       lessonCounts: {}
     };
@@ -232,6 +247,7 @@
       enrollments,
       posts,
       comments,
+      postLikes,
       supportMessages,
       lessonCounts
     ] = await Promise.all([
@@ -242,6 +258,7 @@
       selectTable("enrollments", 1000),
       selectTable("posts", 120),
       selectTable("comments", 300),
+      selectTable("post_likes", 2000),
       selectTable("support_messages", 200),
       loadLessonCounts()
     ]);
@@ -254,6 +271,7 @@
       enrollments,
       posts,
       comments,
+      postLikes,
       supportMessages,
       lessonCounts
     };
@@ -310,10 +328,11 @@
   function renderSplash() {
     app.innerHTML = `
       <div class="splash">
-        <div>
-          ${logoSvg("brand-mark")}
+        <div class="splash-content">
+          ${logoSvg("brand-mark splash-logo")}
           <h1>مستر عماد حمدي</h1>
           <p>تاريخ وجغرافيا بشكل أوضح</p>
+          <div class="splash-loader"></div>
         </div>
       </div>
     `;
@@ -363,6 +382,14 @@
             ${!isLogin ? `<label>الاسم<input class="field" name="name" required placeholder="اكتب اسمك" /></label>` : ""}
             <label>البريد الإلكتروني<input class="field" name="email" type="email" required placeholder="name@example.com" /></label>
             <label>كلمة السر<input class="field" name="password" type="password" required minlength="6" placeholder="******" /></label>
+            ${!isLogin ? `<label>رقم الموبايل<input class="field" name="phone" type="tel" required placeholder="01xxxxxxxxx" /></label>` : ""}
+            ${!isLogin ? `<label>الفصل الدراسي
+              <select class="select" name="semester" required>
+                <option value="">اختر الفصل الدراسي</option>
+                <option value="الفصل الدراسي الأول">الفصل الدراسي الأول</option>
+                <option value="الفصل الدراسي الثاني">الفصل الدراسي الثاني</option>
+              </select>
+            </label>` : ""}
             <button class="btn gold" type="submit">${isLogin ? "دخول" : "تسجيل"}</button>
           </form>
         </section>
@@ -527,9 +554,12 @@
       <section>
         <div class="section-title">
           <h2>الكورسات التعليمية</h2>
-          <input class="search" data-search placeholder="ابحث باسم الكورس أو الصف" value="${escapeAttr(state.search)}" />
+          <div class="row">
+            <input class="search" data-search placeholder="ابحث باسم الكورس أو الصف" value="${escapeAttr(state.search)}" />
+            ${isAdmin() ? `<button class="btn gold" data-toggle-course-form>➕ إضافة كورس جديد</button>` : ''}
+          </div>
         </div>
-        ${isAdmin() ? renderCourseEditor() : ""}
+        ${isAdmin() ? renderCourseEditor() : ''}
         ${renderCourseStrip(courses)}
       </section>
     `;
@@ -570,10 +600,10 @@
 
   function renderCourseAdminActions(course) {
     return `
-      <div class="card-actions" style="margin-top:10px">
-        <button class="btn ghost" data-edit-course="${course.id}">تعديل سريع</button>
+      <div class="card-actions" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
+        <button class="btn ghost" data-edit-course="${course.id}">تعديل الكورس</button>
         <button class="btn ghost" data-toggle-course="${course.id}">${course.is_published === false ? "نشر" : "إخفاء"}</button>
-        <button class="btn danger" data-delete-course="${course.id}">حذف</button>
+        <button class="btn danger" data-delete-course="${course.id}">حذف الكورس</button>
       </div>
     `;
   }
@@ -595,19 +625,31 @@
     const canWatch = canAccessCourse(course.id);
     const isPaid = Number(course.price) > 0;
     const enrollment = getEnrollment(course.id);
+    const totalLessons = sections.reduce((sum, s) => sum + state.data.lessons.filter(l => l.sectionId === s.id).length, 0);
     return `
       <section>
         <div class="section-title">
-          <div>
-            <button class="btn ghost" data-route="courses">رجوع للكورسات</button>
-            <h2>${escapeHtml(course.title)}</h2>
-            <p class="muted">${escapeHtml(course.description)}</p>
-          </div>
-          <div class="row">
-            <span class="pill gold">${priceText(course)}</span>
-            ${enrollment?.status === "active" ? '<span class="pill">مشترك ✓</span>' : ''}
+          <button class="btn ghost" data-route="courses">← رجوع للكورسات</button>
+        </div>
+
+        <div class="course-detail-header card">
+          ${course.image_url ? `<div class="course-detail-cover" style="${bg(course.image_url)}"></div>` : ''}
+          <div class="course-detail-info">
+            <div class="row" style="gap:8px;margin-bottom:8px">
+              <span class="pill">${escapeHtml(course.grade || 'عام')}</span>
+              <span class="pill gold">${priceText(course)}</span>
+              ${enrollment?.status === 'active' ? '<span class="pill">مشترك ✓</span>' : ''}
+            </div>
+            <h1 style="margin:0 0 8px">${escapeHtml(course.title)}</h1>
+            <p class="muted" style="margin:0 0 12px;line-height:1.8">${escapeHtml(course.description)}</p>
+            <div class="row">
+              <span class="pill">📚 ${sections.length} قسم</span>
+              <span class="pill">🎥 ${totalLessons} فيديو</span>
+              <span class="pill">👨‍🏫 ${escapeHtml(course.teacher_name || 'مستر عماد حمدي')}</span>
+            </div>
           </div>
         </div>
+
         ${isPaid && !canWatch ? `
           <div class="whatsapp-banner">
             <div>
@@ -617,8 +659,12 @@
             <button class="btn whatsapp" data-buy-course="${course.id}">📱 للتواصل لشراء الكورس اضغط هنا</button>
           </div>
         ` : ''}
+
+        <div class="section-title" style="margin-top:24px">
+          <h3>📚 أقسام الكورس (${sections.length})</h3>
+          ${isAdmin() ? `<button class="btn gold" data-toggle-section-form>➕ إضافة قسم جديد</button>` : ''}
+        </div>
         ${isAdmin() ? renderSectionEditor(course.id) : ''}
-        <h3 class="section" style="margin-bottom:8px">أقسام الكورس: ${sections.length}</h3>
         <div class="list">
           ${sections
             .map((section) => renderSectionBlock(section, canWatch))
@@ -648,17 +694,17 @@
       .filter((lesson) => lesson.sectionId === section.id)
       .sort((a, b) => a.sortOrder - b.sortOrder);
     return `
-      <article class="card">
+      <article class="card section-block">
         ${section.imageUrl ? `<div class="section-cover" style="${bg(section.imageUrl)}"></div>` : ""}
         <div class="section-title">
           <div>
-            <h3>${escapeHtml(section.title)}</h3>
+            <h3>📁 ${escapeHtml(section.title)}</h3>
             <span class="pill">${lessons.length} فيديو</span>
           </div>
           ${isAdmin() ? `
             <div class="row">
               <button class="btn ghost" data-edit-section="${section.id}">تعديل القسم</button>
-              <label class="btn ghost file-btn">تغيير الصورة<input type="file" accept="image/*" data-section-image="${section.id}" /></label>
+              <label class="btn ghost file-btn">🖼️ صورة<input type="file" accept="image/*" data-section-image="${section.id}" /></label>
               <button class="btn danger" data-delete-section="${section.id}">حذف القسم</button>
             </div>
           ` : ""}
@@ -752,6 +798,8 @@
 
   function renderPostCard(post) {
     const comments = state.data.comments.filter((comment) => comment.post_id === post.id || comment.postId === post.id);
+    const likes = state.data.postLikes.filter((like) => (like.post_id || like.postId) === post.id);
+    const isLiked = likes.some((like) => (like.user_id || like.userId) === state.user?.id);
     return `
       <article class="post-card">
         ${post.image_url ? `<div class="post-image" style="${bg(post.image_url)}"></div>` : ""}
@@ -759,14 +807,33 @@
           <span class="pill gold">مستر عماد حمدي</span>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.body)}</p>
-          <div class="row">
+          <div class="post-reactions">
+            <button class="like-btn ${isLiked ? 'liked' : ''}" data-toggle-like="${post.id}">
+              ${isLiked ? '❤️' : '🤍'} <span>${likes.length}</span>
+            </button>
             <span class="muted">${comments.length} تعليق</span>
             <span class="muted">${formatDate(post.created_at)}</span>
           </div>
-          <form class="form" data-post-comment-form="${post.id}" style="margin-top:12px">
-            <input class="field" name="body" placeholder="اكتب تعليق على المنشور" />
-            <button class="btn ghost" type="submit">تعليق</button>
-          </form>
+          <div class="post-comments-section">
+            <form class="form" data-post-comment-form="${post.id}">
+              <div class="comment-input-row">
+                <input class="field" name="body" placeholder="اكتب تعليق..." />
+                <button class="btn" type="submit">إرسال</button>
+              </div>
+            </form>
+            <div class="post-comments-list">
+              ${comments.slice(0, 5).map((comment) => {
+                const profile = findProfile(comment.user_id || comment.userId);
+                return `
+                  <div class="post-comment-item">
+                    <strong>${escapeHtml(profile?.full_name || 'طالب')}</strong>
+                    <p>${escapeHtml(comment.body)}</p>
+                  </div>
+                `;
+              }).join("") || ''}
+              ${comments.length > 5 ? `<span class="muted">و${comments.length - 5} تعليقات أخرى...</span>` : ''}
+            </div>
+          </div>
           ${isAdmin() ? renderPostAdminActions(post) : ""}
         </div>
       </article>
@@ -789,9 +856,10 @@
         <div class="section-title">
           <div>
             <h2>الشكاوى والدعم</h2>
-            <p class="muted">اكتب رسالتك وسيتم التواصل معك في أقرب وقت.</p>
+            <p class="muted">${isAdmin() ? 'رسائل الدعم الواردة من الطلاب.' : 'اكتب رسالتك وسيتم التواصل معك في أقرب وقت.'}</p>
           </div>
         </div>
+        ${isAdmin() ? '' : `
         <div class="grid two">
           <form class="card form" data-support-form>
             <label>الاسم<input class="field" name="name" required value="${escapeAttr(state.profile.full_name)}" /></label>
@@ -805,6 +873,7 @@
             <a class="btn whatsapp" href="${whatsappGeneralLink()}" target="_blank" rel="noreferrer">فتح واتساب</a>
           </div>
         </div>
+        `}
         ${isAdmin() ? renderSupportInbox() : ""}
       </section>
     `;
@@ -860,36 +929,59 @@
 
   function renderCourseEditor() {
     return `
-      <div class="admin-box course-composer">
-        <div class="section-title">
+      <div class="admin-box course-composer collapsible-form" data-course-form-area style="display:none">
+        <div class="composer-header">
           <div>
-            <h3>إضافة كورس جديد</h3>
-            <p class="muted">املأ بيانات الكورس، ولو أضفت رابط فيديو سيتم إنشاء قسم وفيديو أول تلقائيًا داخل الكورس.</p>
+            <h3>📝 إضافة كورس جديد</h3>
+            <p class="muted">املأ البيانات الأساسية للكورس. لو أضفت رابط فيديو سيتم إنشاء قسم وفيديو أول تلقائيًا.</p>
           </div>
+          <button class="btn ghost" data-toggle-course-form>✖ إغلاق</button>
         </div>
         <form class="form" data-course-form>
+          <div class="form-step">
+            <span class="step-badge">1</span>
+            <h4>المعلومات الأساسية</h4>
+          </div>
           <div class="admin-grid">
-            <label>اسم الكورس<input class="field" name="title" required placeholder="مثال: تاريخ الصف الثالث الثانوي" /></label>
-            <label>الصف الدراسي اختياري<input class="field" name="grade" placeholder="مثال: الثالث الثانوي" /></label>
+            <label>اسم الكورس *<input class="field" name="title" required placeholder="مثال: تاريخ الصف الثالث الثانوي" /></label>
+            <label>الصف الدراسي<input class="field" name="grade" placeholder="مثال: الثالث الثانوي" /></label>
+          </div>
+          <label>وصف الكورس *<textarea class="textarea" name="description" required placeholder="اكتب وصف مختصر للطلاب عن محتوى الكورس"></textarea></label>
+
+          <div class="form-step">
+            <span class="step-badge">2</span>
+            <h4>التسعير</h4>
+          </div>
+          <div class="admin-grid">
             <label>نوع الكورس
               <select class="select" name="accessType" data-access-type>
-                <option value="free">مجاني</option>
-                <option value="paid">مدفوع</option>
+                <option value="free">🆓 مجاني</option>
+                <option value="paid">💰 مدفوع</option>
               </select>
             </label>
             <label data-price-field>السعر بالجنيه<input class="field" name="price" type="number" min="0" placeholder="مثال: 500" /></label>
           </div>
-          <label>وصف الكورس<textarea class="textarea" name="description" required placeholder="اكتب وصف مختصر للطلاب"></textarea></label>
-          <div class="admin-grid">
-            <label>رابط فيديو الكورس<input class="field" name="courseUrl" placeholder="YouTube أو Vimeo" /></label>
-            <label>صورة غلاف من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
-            <label>رابط صورة غلاف اختياري<input class="field" name="imageUrl" placeholder="https://..." /></label>
+
+          <div class="form-step">
+            <span class="step-badge">3</span>
+            <h4>الصور والميديا</h4>
           </div>
           <div class="admin-grid">
-            <label>ملف شرح PDF<input class="field" name="explanationFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" /></label>
-            <label>ملف أسئلة أو واجب<input class="field" name="questionsFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></label>
+            <label>🖼️ صورة غلاف الكورس<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+            <label>🔗 أو رابط صورة<input class="field" name="imageUrl" placeholder="https://..." /></label>
           </div>
-          <button class="btn gold" type="submit">إنشاء الكورس</button>
+          <label>🎥 رابط فيديو أول (اختياري)<input class="field" name="courseUrl" placeholder="رابط YouTube أو Vimeo — هيتعمل قسم تلقائي" /></label>
+
+          <div class="form-step">
+            <span class="step-badge">4</span>
+            <h4>مرفقات (اختياري)</h4>
+          </div>
+          <div class="admin-grid">
+            <label>📄 ملف شرح PDF<input class="field" name="explanationFile" type="file" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" /></label>
+            <label>📝 ملف أسئلة / واجب<input class="field" name="questionsFile" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" /></label>
+          </div>
+
+          <button class="btn gold" type="submit" style="margin-top:8px">✅ إنشاء الكورس</button>
         </form>
       </div>
     `;
@@ -897,12 +989,17 @@
 
   function renderSectionEditor(courseId) {
     return `
-      <div class="admin-box">
-        <h3>إضافة قسم للكورس</h3>
-        <form class="form admin-grid" data-section-form="${courseId}">
-          <label>اسم القسم<input class="field" name="title" required placeholder="مثال: الفصل الأول" /></label>
-          <label>صورة القسم من الجهاز<input class="field" name="imageFile" type="file" accept="image/*" /></label>
-          <button class="btn gold" type="submit">إضافة قسم</button>
+      <div class="admin-box collapsible-form" data-section-form-area style="display:none">
+        <div class="composer-header">
+          <h3>📁 إضافة قسم جديد</h3>
+          <button class="btn ghost" data-toggle-section-form>✖ إغلاق</button>
+        </div>
+        <form class="form" data-section-form="${courseId}">
+          <div class="admin-grid">
+            <label>اسم القسم *<input class="field" name="title" required placeholder="مثال: الفصل الأول — الحضارة المصرية" /></label>
+            <label>🖼️ صورة القسم<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+          </div>
+          <button class="btn gold" type="submit">➕ إضافة القسم</button>
         </form>
       </div>
     `;
@@ -910,15 +1007,22 @@
 
   function renderLessonEditor(sectionId) {
     return `
-      <div class="admin-box">
-        <h3>إضافة فيديو</h3>
-        <form class="form admin-grid" data-lesson-form="${sectionId}">
-          <input class="field" name="title" required placeholder="عنوان الفيديو" />
-          <input class="field" name="videoUrl" required placeholder="رابط YouTube أو Vimeo" />
-          <label>صورة الفيديو من الجهاز<input class="field" name="thumbnailFile" type="file" accept="image/*" /></label>
-          <input class="field" name="thumbnailUrl" placeholder="أو رابط صورة مصغرة" />
-          <input class="field" name="externalLink" placeholder="رابط خارجي اختياري" />
-          <button class="btn gold" type="submit">إضافة الفيديو</button>
+      <div class="admin-box collapsible-form" data-lesson-form-area="${sectionId}" style="display:none;margin:0 16px 8px">
+        <div class="composer-header">
+          <h3>🎥 إضافة فيديو</h3>
+          <button class="btn ghost" data-toggle-lesson-form="${sectionId}">✖ إغلاق</button>
+        </div>
+        <form class="form" data-lesson-form="${sectionId}">
+          <div class="admin-grid">
+            <label>عنوان الفيديو *<input class="field" name="title" required placeholder="مثال: الدرس الأول — مقدمة" /></label>
+            <label>رابط الفيديو *<input class="field" name="videoUrl" required placeholder="رابط YouTube أو Vimeo" /></label>
+          </div>
+          <div class="admin-grid">
+            <label>🖼️ صورة الفيديو<input class="field" name="thumbnailFile" type="file" accept="image/*" /></label>
+            <label>🔗 أو رابط صورة<input class="field" name="thumbnailUrl" placeholder="رابط صورة مصغرة" /></label>
+          </div>
+          <label>🔗 رابط خارجي (اختياري)<input class="field" name="externalLink" placeholder="رابط خارجي إضافي" /></label>
+          <button class="btn gold" type="submit">➕ إضافة الفيديو</button>
         </form>
       </div>
     `;
@@ -1043,13 +1147,20 @@
   function renderStudentRow(student) {
     const enrollments = state.data.enrollments.filter((item) => (item.user_id || item.userId) === student.id);
     const passwordText = student.login_password || "غير مسجل - اعمل Reset Password";
+    const isActive = student.is_active !== false;
     return `
       <div class="list-item student-row">
         <div class="student-info">
           <strong>${escapeHtml(student.full_name)}</strong>
           <span class="muted">اليوزر: ${escapeHtml(student.email)}</span>
+          ${student.phone ? `<span class="muted">📱 الموبايل: ${escapeHtml(student.phone)}</span>` : ''}
+          ${student.semester ? `<span class="muted">📚 ${escapeHtml(student.semester)}</span>` : ''}
           <span class="muted">ID: ${escapeHtml(student.id)}</span>
           <span class="pill gold">الباسورد: ${escapeHtml(passwordText)}</span>
+          <div class="student-actions">
+            <button class="btn ${isActive ? 'danger' : 'gold'}" data-toggle-student="${student.id}">${isActive ? '⛔ تعطيل الحساب' : '✅ تفعيل الحساب'}</button>
+            <span class="pill ${isActive ? '' : 'red'}">${isActive ? 'حساب مفعل ✓' : 'حساب معطّل ✗'}</span>
+          </div>
         </div>
         <div class="student-courses">
           ${enrollments
@@ -1418,6 +1529,8 @@
     bindClicks("[data-edit-post]", (node) => editPost(node.dataset.editPost));
     bindClicks("[data-toggle-post]", (node) => togglePost(node.dataset.togglePost));
     bindClicks("[data-delete-post]", (node) => deletePost(node.dataset.deletePost));
+    bindClicks("[data-toggle-like]", (node) => toggleLike(node.dataset.toggleLike));
+    bindClicks("[data-toggle-student]", (node) => toggleStudentActive(node.dataset.toggleStudent));
     bindClicks("[data-course-scroll]", (node) => scrollCourses(node));
     bindClicks("[data-enroll-status]", (node) => {
       const [id, status] = node.dataset.enrollStatus.split(":");
@@ -1517,12 +1630,12 @@
       const { data, error } = await client.auth.signUp({
         email: values.email,
         password: values.password,
-        options: { data: { full_name: values.name, login_password: values.password } }
+        options: { data: { full_name: values.name, login_password: values.password, phone: values.phone || '', semester: values.semester || '' } }
       });
       if (error) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast(friendlyAuthError(error.message)); }
       if (!data.user) { if (btn) { btn.disabled = false; btn.textContent = "إنشاء حساب"; } return toast("حدث خطأ غير متوقع. حاول مرة أخرى."); }
       state.user = data.user;
-      state.profile = await getOrCreateProfile(data.user, values.name);
+      state.profile = await getOrCreateProfile(data.user, values.name, values.phone, values.semester);
     } else {
       const { data, error } = await client.auth.signInWithPassword({
         email: values.email,
@@ -1531,6 +1644,15 @@
       if (error) { if (btn) { btn.disabled = false; btn.textContent = "تسجيل الدخول"; } return toast(friendlyAuthError(error.message)); }
       state.user = data.user;
       state.profile = await getOrCreateProfile(data.user);
+
+      /* Check if account is deactivated */
+      if (state.profile && state.profile.is_active === false) {
+        await client.auth.signOut();
+        state.user = null;
+        state.profile = null;
+        if (btn) { btn.disabled = false; btn.textContent = "تسجيل الدخول"; }
+        return toast("حسابك معطّل. تواصل مع الإدارة لإعادة التفعيل.");
+      }
     }
 
     /* Render home page IMMEDIATELY — don't wait for data */
@@ -1561,7 +1683,7 @@
     return msg || "حدث خطأ. حاول مرة أخرى.";
   }
 
-  async function getOrCreateProfile(user, name = "") {
+  async function getOrCreateProfile(user, name = "", phone = "", semester = "") {
     const { data } = await client.from("profiles").select("*").eq("id", user.id).maybeSingle();
     if (data) return data;
     const profile = {
@@ -1569,7 +1691,10 @@
       full_name: name || user.user_metadata?.full_name || user.email.split("@")[0],
       email: user.email,
       role: "student",
-      login_password: user.user_metadata?.login_password || ""
+      login_password: user.user_metadata?.login_password || "",
+      phone: phone || user.user_metadata?.phone || "",
+      semester: semester || user.user_metadata?.semester || "",
+      is_active: true
     };
     const { error } = await client.from("profiles").insert(profile);
     if (error) console.warn(error);
@@ -1950,7 +2075,17 @@
     } else {
       fallbackStore.addSupport(record);
     }
-    await reload("تم إرسال الرسالة.");
+    /* Clear the form */
+    form.reset();
+    toast("✅ تم إرسال رسالتك بنجاح! سيتم الرد عليك في أقرب وقت.");
+    /* Show browser notification if permitted */
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('رسالة دعم جديدة', { body: 'تم إرسال رسالتك بنجاح', icon: './assets/favicon.svg' });
+    } else if ('Notification' in window && Notification.permission !== 'denied') {
+      Notification.requestPermission();
+    }
+    render();
+    loadData().then(() => render());
   }
 
   async function addLessonComment(lessonId, form) {
@@ -2060,10 +2195,53 @@
     await reload("تم تحديث صلاحيات المستخدم.");
   }
 
+  async function toggleLike(postId) {
+    if (!state.user) return;
+    const existing = state.data.postLikes.find((like) => (like.post_id || like.postId) === postId && (like.user_id || like.userId) === state.user.id);
+    if (existing) {
+      /* Optimistic: remove from local state immediately */
+      state.data.postLikes = state.data.postLikes.filter((like) => like.id !== existing.id);
+      render();
+      if (hasSupabase) {
+        const { error } = await client.from("post_likes").delete().eq("id", existing.id);
+        if (error) { toast(error.message); loadData().then(() => render()); return; }
+      }
+    } else {
+      /* Optimistic: add to local state immediately */
+      const tempLike = { id: 'temp-' + Date.now(), user_id: state.user.id, post_id: postId, created_at: new Date().toISOString() };
+      state.data.postLikes.push(tempLike);
+      render();
+      if (hasSupabase) {
+        const { error } = await client.from("post_likes").insert({ user_id: state.user.id, post_id: postId });
+        if (error) { toast(error.message); }
+      }
+    }
+    /* Sync from server in background */
+    loadData().then(() => render());
+  }
+
+  async function toggleStudentActive(studentId) {
+    const student = state.data.profiles.find((profile) => profile.id === studentId);
+    if (!student) return;
+    const newActive = student.is_active === false ? true : false;
+    const confirmMsg = newActive ? "هل تريد تفعيل هذا الحساب؟" : "هل تريد تعطيل هذا الحساب؟ لن يتمكن الطالب من تسجيل الدخول.";
+    if (!window.confirm(confirmMsg)) return;
+    if (hasSupabase) {
+      const { error } = await client.from("profiles").update({ is_active: newActive }).eq("id", studentId);
+      if (error) return toast(error.message);
+    }
+    /* Optimistic update */
+    student.is_active = newActive;
+    toast(newActive ? "تم تفعيل الحساب." : "تم تعطيل الحساب.");
+    render();
+    loadData().then(() => render());
+  }
+
   async function reload(message) {
-    await loadData();
     toast(message);
     render();
+    /* Load data in background — don't block the UI */
+    loadData().then(() => render());
   }
 
   function navigate(route, id = null) {
@@ -2142,6 +2320,7 @@
       ``,
       `👤 *الاسم:* ${state.profile.full_name}`,
       `📧 *البريد:* ${state.profile.email}`,
+      `📱 *الموبايل:* ${state.profile.phone || 'غير مسجل'}`,
       ``,
       `📖 *الكورس:* ${course.title}`,
       `🏷️ *الصف:* ${course.grade || 'عام'}`,

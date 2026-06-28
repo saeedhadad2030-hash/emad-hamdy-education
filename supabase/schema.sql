@@ -16,6 +16,15 @@ create table if not exists public.profiles (
 alter table public.profiles
   add column if not exists login_password text not null default '';
 
+alter table public.profiles
+  add column if not exists phone text not null default '';
+
+alter table public.profiles
+  add column if not exists semester text not null default '';
+
+alter table public.profiles
+  add column if not exists is_active boolean not null default true;
+
 create table if not exists public.app_settings (
   key text primary key,
   value text not null
@@ -98,6 +107,14 @@ create table if not exists public.comments (
   check ((lesson_id is not null and post_id is null) or (lesson_id is null and post_id is not null))
 );
 
+create table if not exists public.post_likes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  post_id uuid not null references public.posts(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  unique (user_id, post_id)
+);
+
 create table if not exists public.support_messages (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
@@ -132,7 +149,7 @@ begin
   select value into admin_email from public.app_settings where key = 'initial_admin_email';
   select value into admin_password from public.app_settings where key = 'initial_admin_password';
 
-  insert into public.profiles (id, full_name, email, login_password, role)
+  insert into public.profiles (id, full_name, email, login_password, phone, semester, role)
   values (
     new.id,
     coalesce(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
@@ -141,6 +158,8 @@ begin
       new.raw_user_meta_data->>'login_password',
       case when lower(new.email) = lower(admin_email) then admin_password else '' end
     ),
+    coalesce(new.raw_user_meta_data->>'phone', ''),
+    coalesce(new.raw_user_meta_data->>'semester', ''),
     case when lower(new.email) = lower(admin_email) then 'admin' else 'student' end
   )
   on conflict (id) do nothing;
@@ -183,6 +202,7 @@ alter table public.lessons enable row level security;
 alter table public.enrollments enable row level security;
 alter table public.posts enable row level security;
 alter table public.comments enable row level security;
+alter table public.post_likes enable row level security;
 alter table public.support_messages enable row level security;
 
 drop policy if exists "course assets public read" on storage.objects;
@@ -257,6 +277,13 @@ create policy "support read own or admin" on public.support_messages
   for select using (user_id = auth.uid() or public.is_admin());
 create policy "support admin update" on public.support_messages
   for update using (public.is_admin()) with check (public.is_admin());
+
+create policy "likes read all" on public.post_likes
+  for select using (auth.uid() is not null);
+create policy "likes insert own" on public.post_likes
+  for insert with check (user_id = auth.uid());
+create policy "likes delete own" on public.post_likes
+  for delete using (user_id = auth.uid());
 
 -- Function to count lessons per course (bypasses RLS so students see video counts)
 create or replace function public.get_course_lesson_counts()
