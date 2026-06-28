@@ -539,6 +539,17 @@
           <strong>${escapeHtml(state.profile.full_name)}</strong>
           <span class="muted">${escapeHtml(state.profile.email)}</span>
           <div style="margin-top:10px">${isAdmin() ? `<span class="pill gold">وضع المدرس</span>` : `<span class="pill">طالب</span>`}</div>
+          <div style="display: flex; gap: 8px; margin-top: 16px;">
+            ${renderThemeToggle()}
+            <button class="btn danger outline" data-logout style="flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+              خروج
+            </button>
+          </div>
         </div>
       </aside>
     `;
@@ -2921,8 +2932,8 @@
   }
 
   function bindThemeToggle() {
-    const btn = document.querySelector("[data-theme-toggle]");
-    if (btn) btn.addEventListener("click", toggleTheme);
+    const btns = document.querySelectorAll("[data-theme-toggle]");
+    btns.forEach(btn => btn.addEventListener("click", toggleTheme));
   }
 
   function toggleTheme() {
