@@ -2958,4 +2958,33 @@
       document.body.classList.remove("dark");
     }
   }
+
+  /* ══════════════════════════════════════════════
+     ANTI-THEFT & SECURITY
+     ══════════════════════════════════════════════ */
+  (function initSecurity() {
+    document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "F12" || e.keyCode === 123) {
+        e.preventDefault(); return false;
+      }
+      if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "i" || e.key === "J" || e.key === "j" || e.key === "C" || e.key === "c")) {
+        e.preventDefault(); return false;
+      }
+      if (e.ctrlKey && (e.key === "U" || e.key === "u" || e.key === "S" || e.key === "s" || e.key === "P" || e.key === "p")) {
+        e.preventDefault(); return false;
+      }
+    });
+
+    setInterval(() => {
+      const before = new Date().getTime();
+      debugger;
+      const after = new Date().getTime();
+      if (after - before > 100) {
+        document.body.innerHTML = "<h1 style='text-align:center; padding:50px; direction:rtl;'>غير مسموح بفتح أدوات المطورين ⛔</h1>";
+      }
+    }, 2000);
+  })();
+
 })();
