@@ -186,8 +186,8 @@
     try {
       await loadSession();
       if (state.user) {
-        /* Don't await data — render immediately then load in background */
-        state.dataLoading = true;
+        /* Don't show loading screen — render immediately then load in background */
+        state.dataLoading = false;
         state.data = emptyData();
         render();
         loadData().then(() => {
@@ -242,11 +242,11 @@
   }
 
   async function loadData() {
-    state.dataLoading = true;
+    state.dataLoading = false;
     state.data = hasSupabase ? await loadSupabaseData() : emptyData();
-    state.courseLessonsLoaded = new Set(isAdmin() ? state.data.courses.map((course) => course.id) : []);
-    state.postSocialLoaded = isAdmin();
-    state.lessonCommentsLoaded = isAdmin() ? new Set(state.data.lessons.map((lesson) => lesson.id)) : new Set();
+    state.courseLessonsLoaded = new Set(state.data.courses.map((course) => course.id));
+    state.postSocialLoaded = true;
+    state.lessonCommentsLoaded = new Set(state.data.lessons.map((lesson) => lesson.id));
     state.dataLoading = false;
   }
 
@@ -283,11 +283,11 @@
       isAdmin() ? selectTable("profiles", 500) : Promise.resolve(state.profile ? [state.profile] : []),
       selectTable("courses", 200),
       selectTable("course_sections", 500),
-      isAdmin() ? selectTable("lessons", 800) : Promise.resolve([]),
+      selectTable("lessons", 800),
       selectTable("enrollments", 1000),
       selectTable("posts", 120),
-      isAdmin() ? selectTable("comments", 500) : Promise.resolve([]),
-      isAdmin() ? selectTable("post_likes", 2000) : Promise.resolve([]),
+      selectTable("comments", 500),
+      selectTable("post_likes", 2000),
       isAdmin() ? selectTable("support_messages", 200) : Promise.resolve([]),
       selectTable("about_entries", 100),
       loadLessonCounts()
@@ -882,8 +882,8 @@
           <div class="card">
             <h3>التعليقات</h3>
             <form class="form" data-comment-form="${lesson.id}">
-              <textarea class="textarea" name="body" placeholder="اكتب تعليقك"></textarea>
-              <button class="btn" type="submit">إرسال تعليق</button>
+              <textarea class="textarea" name="body" required placeholder="اكتب تعليقك..." style="height:44px; resize:none; padding-top:10px;"></textarea>
+              <button class="btn ghost" type="submit">إرسال</button>
             </form>
             <div class="list" style="margin-top:12px">
               ${commentsLoading ? `<p class="muted">جاري تحميل التعليقات...</p>` : comments.map(renderComment).join("") || `<p class="muted">لا توجد تعليقات بعد.</p>`}
@@ -935,8 +935,8 @@
             <div class="post-comments-section">
               <form class="form" data-post-comment-form="${post.id}">
                 <div class="comment-input-row">
-                  <input class="field" name="body" placeholder="اكتب تعليق..." />
-                  <button class="btn" type="submit">إرسال</button>
+                  <textarea class="textarea" name="body" required placeholder="اكتب تعليق..." style="height:44px; resize:none; padding-top:10px;"></textarea>
+                  <button class="btn ghost" type="submit">إرسال</button>
                 </div>
               </form>
               <div class="post-comments-list">
@@ -1538,9 +1538,18 @@
     if (fsBtn) fsBtn.addEventListener("click", () => {
       const container = document.querySelector("[data-yt-container]");
       if (!container) return;
-      const expanded = container.classList.toggle("video-expanded");
-      document.body.classList.toggle("video-modal-open", expanded);
-      fsBtn.textContent = expanded ? "×" : "⛶";
+      const isExpanded = container.classList.contains("video-expanded") || !!document.fullscreenElement;
+      if (isExpanded) {
+        if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+        container.classList.remove("video-expanded");
+        document.body.classList.remove("video-modal-open");
+        fsBtn.textContent = "⛶";
+      } else {
+        if (container.requestFullscreen) container.requestFullscreen().catch(()=>{});
+        container.classList.add("video-expanded");
+        document.body.classList.add("video-modal-open");
+        fsBtn.textContent = "✖";
+      }
     });
 
     const wideBtn = document.querySelector("[data-yt-wide]");
@@ -2547,7 +2556,12 @@
   }
 
   function visibleCourses() {
-    return state.data.courses.filter((course) => isAdmin() || course.is_published !== false);
+    return state.data.courses.filter((course) => {
+      if (isAdmin()) return true;
+      if (course.is_published === false) return false;
+      if (state.profile?.grade && course.grade && course.grade !== state.profile.grade && course.grade !== "عام") return false;
+      return true;
+    });
   }
 
   function visiblePosts() {
