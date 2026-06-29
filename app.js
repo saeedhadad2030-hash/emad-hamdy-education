@@ -954,6 +954,7 @@
         <div class="section-title">
           <div>
             <h3>📁 ${escapeHtml(section.title)}</h3>
+            ${section.description ? `<p class="muted" style="margin:5px 0 10px;font-size:14px;line-height:1.6">${escapeHtml(section.description)}</p>` : ""}
             <span class="pill">${lessonsLoading ? "جاري التحميل..." : `${lessons.length} فيديو`}</span>
           </div>
           ${isAdmin() ? `
@@ -1198,7 +1199,7 @@
         <div class="composer-header">
           <div>
             <h3>📝 إضافة كورس جديد</h3>
-            <p class="muted">املأ البيانات الأساسية للكورس. لو أضفت رابط فيديو سيتم إنشاء قسم وفيديو أول تلقائيًا.</p>
+            <p class="muted">املأ البيانات الأساسية للكورس.</p>
           </div>
           <button class="btn ghost" data-toggle-course-form>✖ إغلاق</button>
         </div>
@@ -1240,7 +1241,6 @@
             <label>🖼️ صورة غلاف الكورس<input class="field" name="imageFile" type="file" accept="image/*" /></label>
             <label>🔗 أو رابط صورة<input class="field" name="imageUrl" placeholder="https://..." /></label>
           </div>
-          <label>🎥 رابط فيديو أول (اختياري)<input class="field" name="courseUrl" placeholder="رابط YouTube أو Vimeo — هيتعمل قسم تلقائي" /></label>
 
           <div class="form-step">
             <span class="step-badge">4</span>
@@ -1268,6 +1268,10 @@
           <div class="admin-grid">
             <label>اسم القسم *<input class="field" name="title" required placeholder="مثال: الفصل الأول — الحضارة المصرية" /></label>
             <label>🖼️ صورة القسم<input class="field" name="imageFile" type="file" accept="image/*" /></label>
+          </div>
+          <label>وصف القسم<textarea class="textarea" name="description" placeholder="اكتب وصفاً للقسم"></textarea></label>
+          <div class="admin-grid">
+            <label>🎥 رابط الفيديو (اختياري)<input class="field" name="videoUrl" placeholder="رابط YouTube أو Vimeo" /></label>
           </div>
           <button class="btn gold" type="submit">➕ إضافة القسم</button>
         </form>
@@ -2134,7 +2138,6 @@
     const imageFile = form.elements.imageFile?.files?.[0];
     const uploadedImage = imageFile ? await fileToAssetUrl(imageFile, "course-covers") : "";
     const attachments = await collectCourseAttachments(form);
-    const videoThumbnail = youtubeThumbnail(values.courseUrl);
     const isFree = values.accessType !== "paid";
     const price = isFree ? 0 : Number(values.price || 0);
     const record = {
@@ -2142,7 +2145,7 @@
       grade: values.grade || "عام",
       price,
       description: values.description,
-      image_url: uploadedImage || values.imageUrl || videoThumbnail,
+      image_url: uploadedImage || values.imageUrl,
       attachments,
       teacher_name: "مستر عماد حمدي",
       is_published: true
@@ -2156,24 +2159,33 @@
       courseId = fallbackStore.addCourse(record);
     }
 
-    if (values.courseUrl && courseId) {
-      let sectionId = "";
-      const sectionRecord = { course_id: courseId, title: "الفيديوهات", image_url: uploadedImage || values.imageUrl || videoThumbnail, sort_order: 1 };
-      if (hasSupabase) {
-        const { data, error } = await client.from("course_sections").insert(sectionRecord).select("id").single();
-        if (error) return toast(error.message);
-        sectionId = data.id;
-      } else {
-        sectionId = fallbackStore.addSection({ courseId, title: "الفيديوهات", imageUrl: uploadedImage || values.imageUrl || videoThumbnail, sortOrder: 1 });
-      }
+    await reload("تم إضافة الكورس.");
+  }
 
+  async function addSection(courseId, form) {
+    const values = formValues(form);
+    const imageFile = form.elements.imageFile?.files?.[0];
+    const imageUrl = imageFile ? await fileToAssetUrl(imageFile, "section-images") : "";
+    const record = { course_id: courseId, title: values.title, description: values.description || "", image_url: imageUrl, sort_order: countSections(courseId) + 1 };
+    
+    let sectionId = "";
+    if (hasSupabase) {
+      const { data, error } = await client.from("course_sections").insert(record).select("id").single();
+      if (error) return toast(error.message);
+      sectionId = data.id;
+    } else {
+      sectionId = fallbackStore.addSection({ courseId, title: values.title, description: values.description || "", imageUrl, sortOrder: countSections(courseId) + 1 });
+    }
+
+    if (values.videoUrl) {
+      const videoThumbnail = youtubeThumbnail(values.videoUrl);
       const lessonRecord = {
         section_id: sectionId,
         title: values.title,
-        video_url: values.courseUrl,
-        thumbnail_url: uploadedImage || values.imageUrl || videoThumbnail,
+        video_url: values.videoUrl,
+        thumbnail_url: imageUrl || videoThumbnail,
         external_links: [],
-        attachments,
+        attachments: [],
         sort_order: 1
       };
       if (hasSupabase) {
@@ -2183,28 +2195,15 @@
         fallbackStore.addLesson({
           sectionId,
           title: values.title,
-          videoUrl: values.courseUrl,
-          thumbnailUrl: uploadedImage || values.imageUrl || videoThumbnail,
+          videoUrl: values.videoUrl,
+          thumbnailUrl: imageUrl || videoThumbnail,
           externalLinks: [],
-          attachments,
+          attachments: [],
           sortOrder: 1
         });
       }
     }
-    await reload("تم إضافة الكورس.");
-  }
 
-  async function addSection(courseId, form) {
-    const values = formValues(form);
-    const imageFile = form.elements.imageFile?.files?.[0];
-    const imageUrl = imageFile ? await fileToAssetUrl(imageFile, "section-images") : "";
-    const record = { course_id: courseId, title: values.title, image_url: imageUrl, sort_order: countSections(courseId) + 1 };
-    if (hasSupabase) {
-      const { error } = await client.from("course_sections").insert(record);
-      if (error) return toast(error.message);
-    } else {
-      fallbackStore.addSection({ courseId, title: values.title, imageUrl, sortOrder: countSections(courseId) + 1 });
-    }
     await reload("تم إضافة القسم.");
   }
 

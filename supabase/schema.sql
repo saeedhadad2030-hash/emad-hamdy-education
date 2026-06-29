@@ -65,6 +65,7 @@ create table if not exists public.course_sections (
   id uuid primary key default gen_random_uuid(),
   course_id uuid not null references public.courses(id) on delete cascade,
   title text not null,
+  description text not null default '',
   image_url text not null default '',
   sort_order integer not null default 0,
   created_at timestamptz not null default now()
@@ -72,6 +73,9 @@ create table if not exists public.course_sections (
 
 alter table public.course_sections
   add column if not exists image_url text not null default '';
+
+alter table public.course_sections
+  add column if not exists description text not null default '';
 
 create table if not exists public.lessons (
   id uuid primary key default gen_random_uuid(),
