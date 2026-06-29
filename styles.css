@@ -1932,7 +1932,7 @@ body.dark .smoke {
 .relative-z {
   position: relative;
   z-index: 10;
-  background: rgba(255, 250, 240, 0.70); 
+  background: rgba(255, 250, 240, 0.35); 
   backdrop-filter: blur(8px);
   box-shadow: 0 15px 35px rgba(0,0,0,0.2);
   margin: 20px;
@@ -1940,5 +1940,5 @@ body.dark .smoke {
 }
 
 body.dark .relative-z {
-  background: rgba(30, 41, 59, 0.75);
+  background: rgba(30, 41, 59, 0.40);
 }
