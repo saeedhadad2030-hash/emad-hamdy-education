@@ -474,8 +474,22 @@
   function renderAuth() {
     const isLogin = state.authMode === "login";
     return `
-      <div class="auth-wrap">
-        <section class="auth-card">
+      <div class="auth-wrap animated-auth">
+        <div class="scenery-bg">
+          <div class="sky-gradient"></div>
+          <div class="stars"></div>
+          <div class="sun-moon"></div>
+          <div class="clouds"></div>
+          <svg class="silhouettes" viewBox="0 0 1000 200" preserveAspectRatio="none">
+            <path fill="var(--ink)" d="M0,200 L0,150 L100,70 L250,180 L400,20 L600,200 L1000,100 L1000,200 Z" opacity="0.4"/>
+            <path fill="var(--ink)" d="M0,200 L0,180 L150,80 L350,190 L500,40 L750,200 L1000,120 L1000,200 Z" opacity="0.6"/>
+            <path fill="var(--ink)" d="M600,200 L700,80 L820,200 Z" opacity="0.9"/>
+            <path fill="#000" d="M700,80 L750,130 L820,200 L600,200 Z" opacity="0.2"/>
+            <path fill="var(--ink)" d="M770,200 L850,110 L940,200 Z" opacity="0.95"/>
+            <path fill="#000" d="M850,110 L890,155 L940,200 L770,200 Z" opacity="0.2"/>
+          </svg>
+        </div>
+        <section class="auth-card relative-z">
           <div class="brand">
             ${logoSvg("brand-mark")}
             <div>
@@ -488,10 +502,10 @@
             <button class="${!isLogin ? "active" : ""}" data-auth-tab="signup">إنشاء حساب</button>
           </div>
           <form class="form" data-auth-form>
-            ${!isLogin ? `<label>الاسم<input class="field" name="name" required placeholder="اكتب اسمك" /></label>` : ""}
-            <label>البريد الإلكتروني<input class="field" name="email" type="email" required placeholder="name@example.com" /></label>
-            <label>كلمة السر<input class="field" name="password" type="password" required minlength="6" placeholder="******" /></label>
-            ${!isLogin ? `<label>رقم الموبايل<input class="field" name="phone" type="tel" required placeholder="01xxxxxxxxx" /></label>` : ""}
+            ${!isLogin ? `<label>الاسم<input class="field" name="name" required /></label>` : ""}
+            <label>البريد الإلكتروني<input class="field" name="email" type="email" required /></label>
+            <label>كلمة السر<input class="field" name="password" type="password" required minlength="6" /></label>
+            ${!isLogin ? `<label>رقم الموبايل<input class="field" name="phone" type="tel" required /></label>` : ""}
             ${!isLogin ? `<label>الصف
               <select class="select" name="grade" required>
                 <option value="">اختر الصف</option>

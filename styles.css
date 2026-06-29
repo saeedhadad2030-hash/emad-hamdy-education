@@ -1732,3 +1732,96 @@ body.privacy-blur .video-protected iframe {
     padding: 100px;
   }
 }
+
+/* ═══════════════════════════════════════
+   ANIMATED AUTH BACKGROUND (Geography & History)
+   ═══════════════════════════════════════ */
+
+.animated-auth {
+  position: relative;
+  overflow: hidden;
+  background: #1e3c72;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.scenery-bg {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.sky-gradient {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 40%, #86a8e7 80%, #1e3c72 100%);
+  background-size: 100% 400%;
+  animation: skyChange 20s infinite alternate ease-in-out;
+}
+
+@keyframes skyChange {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+.stars {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 70%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 60px 80px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 120px 150px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 200px 50px, #ffffff, rgba(0,0,0,0)),
+    radial-gradient(2px 2px at 250px 220px, #ffffff, rgba(0,0,0,0));
+  background-repeat: repeat;
+  background-size: 300px 300px;
+  opacity: 0;
+  animation: starlight 20s infinite alternate ease-in-out;
+}
+
+@keyframes starlight {
+  0% { opacity: 0; }
+  60% { opacity: 0; }
+  100% { opacity: 0.9; }
+}
+
+.sun-moon {
+  position: absolute;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: #ffdb58;
+  box-shadow: 0 0 50px #ffdb58, 0 0 100px #ffdb58;
+  left: 20%;
+  top: 50%;
+  animation: sunPath 20s infinite alternate ease-in-out;
+}
+
+@keyframes sunPath {
+  0% { transform: translateY(100px) scale(1); background: #ffdb58; box-shadow: 0 0 50px #ffdb58, 0 0 100px #ffdb58; }
+  100% { transform: translateY(-250px) translateX(100px) scale(0.8); background: #f4f6f0; box-shadow: 0 0 20px #f4f6f0, 0 0 50px #f4f6f0; }
+}
+
+.silhouettes {
+  position: absolute;
+  bottom: 0; left: 0; width: 100%;
+  height: 25vh;
+  min-height: 180px;
+}
+
+.relative-z {
+  position: relative;
+  z-index: 10;
+  background: rgba(255, 250, 240, 0.85); 
+  backdrop-filter: blur(10px);
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  margin: 20px;
+  width: min(460px, calc(100% - 40px));
+}
+
+body.dark .relative-z {
+  background: rgba(30, 41, 59, 0.85);
+}
