@@ -853,8 +853,9 @@
 
   function renderCourseAdminActions(course) {
     return `
-      <div class="card-actions" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;">
-        <button class="btn ghost" data-edit-course="${course.id}">تعديل الكورس</button>
+      <div class="card-actions" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px; gap:8px; flex-wrap:wrap;">
+        <button class="btn ghost" data-edit-course="${course.id}">✏️ تعديل الكورس</button>
+        <label class="btn ghost file-btn">🖼️ تغيير الصورة<input type="file" accept="image/*" data-course-image="${course.id}" /></label>
         <button class="btn ghost" data-toggle-course="${course.id}">${course.is_published === false ? "نشر" : "إخفاء"}</button>
         <button class="btn danger" data-delete-course="${course.id}">حذف الكورس</button>
       </div>
@@ -1825,6 +1826,11 @@
       if (area) area.style.display = area.style.display === "none" ? "block" : "none";
     });
 
+    bindClicks("[data-toggle-section-form]", () => {
+      const area = document.querySelector("[data-section-form-area]");
+      if (area) area.style.display = area.style.display === "none" ? "block" : "none";
+    });
+
     bindClicks("[data-open-course]", (node) => openCourse(node.dataset.openCourse));
     bindClicks("[data-open-lesson]", (node) => navigate("lesson", node.dataset.openLesson));
     bindClicks("[data-buy-course]", (node) => buyCourse(node.dataset.buyCourse));
@@ -1836,6 +1842,7 @@
     bindClicks("[data-delete-section]", (node) => deleteSection(node.dataset.deleteSection));
     bindClicks("[data-edit-lesson]", (node) => editLesson(node.dataset.editLesson));
     bindClicks("[data-delete-lesson]", (node) => deleteLesson(node.dataset.deleteLesson));
+    bindImageInputs("[data-course-image]", updateCourseImage);
     bindImageInputs("[data-section-image]", updateSectionImage);
     bindImageInputs("[data-lesson-image]", updateLessonImage);
     bindClicks("[data-edit-post]", (node) => editPost(node.dataset.editPost));
@@ -2329,6 +2336,20 @@
       });
     }
     return attachments;
+  }
+
+  async function updateCourseImage(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+    const imageUrl = await fileToAssetUrl(file, "course-covers");
+    const courseId = input.dataset.courseImage;
+    if (hasSupabase) {
+      const { error } = await client.from("courses").update({ image_url: imageUrl }).eq("id", courseId);
+      if (error) return toast(error.message);
+    } else {
+      fallbackStore.updateCourse(courseId, { imageUrl });
+    }
+    await reload("تم تحديث صورة الكورس.");
   }
 
   async function editCourse(courseId) {
