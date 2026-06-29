@@ -478,15 +478,29 @@
         <div class="scenery-bg">
           <div class="sky-gradient"></div>
           <div class="stars"></div>
-          <div class="sun-moon"></div>
-          <div class="clouds"></div>
-          <svg class="silhouettes" viewBox="0 0 1000 200" preserveAspectRatio="none">
-            <path fill="var(--ink)" d="M0,200 L0,150 L100,70 L250,180 L400,20 L600,200 L1000,100 L1000,200 Z" opacity="0.4"/>
-            <path fill="var(--ink)" d="M0,200 L0,180 L150,80 L350,190 L500,40 L750,200 L1000,120 L1000,200 Z" opacity="0.6"/>
-            <path fill="var(--ink)" d="M600,200 L700,80 L820,200 Z" opacity="0.9"/>
-            <path fill="#000" d="M700,80 L750,130 L820,200 L600,200 Z" opacity="0.2"/>
-            <path fill="var(--ink)" d="M770,200 L850,110 L940,200 Z" opacity="0.95"/>
-            <path fill="#000" d="M850,110 L890,155 L940,200 L770,200 Z" opacity="0.2"/>
+          <div class="smoke-container">
+            <div class="smoke s1"></div>
+            <div class="smoke s2"></div>
+            <div class="smoke s3"></div>
+            <div class="smoke s4"></div>
+          </div>
+          <div class="fire-container">
+            <div class="fire f1"></div>
+            <div class="fire f2"></div>
+            <div class="fire f3"></div>
+            <div class="fire f4"></div>
+            <div class="fire f5"></div>
+          </div>
+          <svg class="silhouettes" viewBox="0 0 1000 300" preserveAspectRatio="none">
+            <!-- Ground -->
+            <path class="ground" d="M0,300 L1000,300 L1000,200 L0,200 Z" opacity="0.8"/>
+            <path class="ground-dark" d="M0,300 L0,250 L100,280 L200,240 L350,300 Z" opacity="0.6"/>
+            <path class="ground-dark" d="M1000,300 L1000,230 L900,270 L800,220 L650,300 Z" opacity="0.6"/>
+            <!-- Volcano Base -->
+            <path class="volcano-base" d="M150,300 L450,80 L550,80 L850,300 Z" opacity="0.9"/>
+            <path class="volcano-shade" d="M500,80 L550,80 L850,300 L500,300 Z" opacity="0.3"/>
+            <!-- Crater / Lava Spill -->
+            <path fill="#ff4500" d="M450,80 Q500,100 550,80 L530,150 Q500,180 470,150 Z" class="lava-glow"/>
           </svg>
         </div>
         <section class="auth-card relative-z">

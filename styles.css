@@ -1734,7 +1734,7 @@ body.privacy-blur .video-protected iframe {
 }
 
 /* ═══════════════════════════════════════
-   ANIMATED AUTH BACKGROUND (Geography & History)
+   ANIMATED AUTH BACKGROUND (Volcano)
    ═══════════════════════════════════════ */
 
 .animated-auth {
@@ -1758,16 +1758,28 @@ body.privacy-blur .video-protected iframe {
 .sky-gradient {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 100%;
-  background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 40%, #86a8e7 80%, #1e3c72 100%);
+  background: linear-gradient(180deg, #ff7e5f 0%, #feb47b 40%, #1a2a6c 80%, #121526 100%);
   background-size: 100% 400%;
-  animation: skyChange 20s infinite alternate ease-in-out;
+  animation: volcanoSky 20s infinite alternate ease-in-out;
+  transition: background 0.5s ease;
 }
 
-@keyframes skyChange {
+body.dark .sky-gradient {
+  background: linear-gradient(180deg, #8b0000 0%, #4a0404 40%, #1a0000 80%, #000000 100%);
+  animation: darkVolcanoSky 20s infinite alternate ease-in-out;
+}
+
+@keyframes volcanoSky {
   0% { background-position: 0% 0%; }
   100% { background-position: 0% 100%; }
 }
 
+@keyframes darkVolcanoSky {
+  0% { background-position: 0% 0%; }
+  100% { background-position: 0% 100%; }
+}
+
+/* Stars */
 .stars {
   position: absolute;
   top: 0; left: 0; width: 100%; height: 70%;
@@ -1783,35 +1795,127 @@ body.privacy-blur .video-protected iframe {
   animation: starlight 20s infinite alternate ease-in-out;
 }
 
+body.dark .stars {
+  opacity: 0.7;
+  animation: none; /* Always visible in dark mode */
+}
+
 @keyframes starlight {
   0% { opacity: 0; }
   60% { opacity: 0; }
   100% { opacity: 0.9; }
 }
 
-.sun-moon {
-  position: absolute;
-  width: 80px; height: 80px;
-  border-radius: 50%;
-  background: #ffdb58;
-  box-shadow: 0 0 50px #ffdb58, 0 0 100px #ffdb58;
-  left: 20%;
-  top: 50%;
-  animation: sunPath 20s infinite alternate ease-in-out;
-}
-
-@keyframes sunPath {
-  0% { transform: translateY(100px) scale(1); background: #ffdb58; box-shadow: 0 0 50px #ffdb58, 0 0 100px #ffdb58; }
-  100% { transform: translateY(-250px) translateX(100px) scale(0.8); background: #f4f6f0; box-shadow: 0 0 20px #f4f6f0, 0 0 50px #f4f6f0; }
-}
-
+/* Volcano Silhouettes */
 .silhouettes {
   position: absolute;
   bottom: 0; left: 0; width: 100%;
-  height: 25vh;
-  min-height: 180px;
+  height: 35vh;
+  min-height: 200px;
 }
 
+.ground, .volcano-base {
+  fill: var(--ink);
+  transition: fill 0.3s ease;
+}
+
+body.dark .ground, body.dark .volcano-base {
+  fill: #050505;
+}
+
+.ground-dark, .volcano-shade {
+  fill: #000000;
+}
+
+.lava-glow {
+  animation: lavaPulse 2s infinite alternate;
+}
+
+@keyframes lavaPulse {
+  0% { fill: #ff4500; filter: drop-shadow(0 0 10px #ff4500); }
+  100% { fill: #ff8c00; filter: drop-shadow(0 0 30px #ff8c00); }
+}
+
+/* Smoke */
+.smoke-container {
+  position: absolute;
+  bottom: 35vh; 
+  left: 50%;
+  width: 100px;
+  height: 300px;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .smoke-container { bottom: 30vh; }
+}
+
+.smoke {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 50px;
+  height: 50px;
+  background: rgba(80, 80, 80, 0.7);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  filter: blur(10px);
+  animation: smokeRise 6s infinite linear;
+}
+
+body.dark .smoke {
+  background: rgba(30, 30, 30, 0.9);
+}
+
+.smoke.s1 { animation-delay: 0s; width: 60px; height: 60px; left: 40%; }
+.smoke.s2 { animation-delay: 1.5s; width: 80px; height: 80px; left: 60%; }
+.smoke.s3 { animation-delay: 3s; width: 70px; height: 70px; left: 50%; }
+.smoke.s4 { animation-delay: 4.5s; width: 90px; height: 90px; left: 45%; }
+
+@keyframes smokeRise {
+  0% { bottom: 0; transform: translateX(-50%) scale(1); opacity: 0.8; }
+  100% { bottom: 100%; transform: translateX(-50%) scale(4); opacity: 0; }
+}
+
+/* Fire particles */
+.fire-container {
+  position: absolute;
+  bottom: 35vh;
+  left: 50%;
+  width: 100px;
+  height: 200px;
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .fire-container { bottom: 30vh; }
+}
+
+.fire {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #ff4500;
+  border-radius: 50%;
+  box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00;
+  animation: fireShoot 2s infinite ease-out;
+}
+
+.fire.f1 { left: 45%; animation-delay: 0s; animation-duration: 2.2s; }
+.fire.f2 { left: 55%; animation-delay: 0.5s; animation-duration: 1.8s; }
+.fire.f3 { left: 50%; animation-delay: 1s; animation-duration: 2.5s; }
+.fire.f4 { left: 40%; animation-delay: 1.2s; animation-duration: 1.5s; }
+.fire.f5 { left: 60%; animation-delay: 1.8s; animation-duration: 2s; }
+
+@keyframes fireShoot {
+  0% { bottom: 0; transform: scale(1); opacity: 1; }
+  50% { opacity: 1; }
+  100% { bottom: 100%; transform: scale(0.2); opacity: 0; }
+}
+
+/* Auth Card Overrides */
 .relative-z {
   position: relative;
   z-index: 10;
