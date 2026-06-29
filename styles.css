@@ -1839,15 +1839,17 @@ body.dark .ground, body.dark .volcano-base {
 /* Smoke */
 .smoke-container {
   position: absolute;
-  bottom: 35vh; 
+  bottom: 30vh; 
   left: 50%;
-  width: 100px;
-  height: 300px;
+  width: 100%;
+  height: 70vh;
   transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 12;
 }
 
 @media (max-width: 768px) {
-  .smoke-container { bottom: 30vh; }
+  .smoke-container { bottom: 25vh; }
 }
 
 .smoke {
@@ -1860,35 +1862,41 @@ body.dark .ground, body.dark .volcano-base {
   border-radius: 50%;
   transform: translateX(-50%);
   filter: blur(10px);
-  animation: smokeRise 6s infinite linear;
 }
 
 body.dark .smoke {
   background: rgba(30, 30, 30, 0.9);
 }
 
-.smoke.s1 { animation-delay: 0s; width: 60px; height: 60px; left: 40%; }
-.smoke.s2 { animation-delay: 1.5s; width: 80px; height: 80px; left: 60%; }
-.smoke.s3 { animation-delay: 3s; width: 70px; height: 70px; left: 50%; }
-.smoke.s4 { animation-delay: 4.5s; width: 90px; height: 90px; left: 45%; }
+.smoke.s1 { animation: smokeRiseLeft 6s infinite linear 0s; width: 60px; height: 60px; }
+.smoke.s2 { animation: smokeRiseRight 7s infinite linear 1.5s; width: 80px; height: 80px; }
+.smoke.s3 { animation: smokeRiseLeft 6.5s infinite linear 3s; width: 70px; height: 70px; }
+.smoke.s4 { animation: smokeRiseRight 6s infinite linear 4.5s; width: 90px; height: 90px; }
 
-@keyframes smokeRise {
-  0% { bottom: 0; transform: translateX(-50%) scale(1); opacity: 0.8; }
-  100% { bottom: 100%; transform: translateX(-50%) scale(4); opacity: 0; }
+@keyframes smokeRiseLeft {
+  0% { bottom: 0; left: 50%; transform: translateX(-50%) scale(1); opacity: 0.8; }
+  100% { bottom: 100%; left: 10%; transform: translateX(-50%) scale(4); opacity: 0; }
+}
+
+@keyframes smokeRiseRight {
+  0% { bottom: 0; left: 50%; transform: translateX(-50%) scale(1); opacity: 0.8; }
+  100% { bottom: 100%; left: 90%; transform: translateX(-50%) scale(4); opacity: 0; }
 }
 
 /* Fire particles */
 .fire-container {
   position: absolute;
-  bottom: 35vh;
+  bottom: 30vh;
   left: 50%;
-  width: 100px;
-  height: 200px;
+  width: 100%;
+  height: 60vh;
   transform: translateX(-50%);
+  pointer-events: none;
+  z-index: 12;
 }
 
 @media (max-width: 768px) {
-  .fire-container { bottom: 30vh; }
+  .fire-container { bottom: 25vh; }
 }
 
 .fire {
@@ -1900,32 +1908,37 @@ body.dark .smoke {
   background: #ff4500;
   border-radius: 50%;
   box-shadow: 0 0 10px #ff4500, 0 0 20px #ff8c00;
-  animation: fireShoot 2s infinite ease-out;
 }
 
-.fire.f1 { left: 45%; animation-delay: 0s; animation-duration: 2.2s; }
-.fire.f2 { left: 55%; animation-delay: 0.5s; animation-duration: 1.8s; }
-.fire.f3 { left: 50%; animation-delay: 1s; animation-duration: 2.5s; }
-.fire.f4 { left: 40%; animation-delay: 1.2s; animation-duration: 1.5s; }
-.fire.f5 { left: 60%; animation-delay: 1.8s; animation-duration: 2s; }
+.fire.f1 { animation: fireShootLeft 2.2s infinite ease-out 0s; }
+.fire.f2 { animation: fireShootRight 1.8s infinite ease-out 0.5s; }
+.fire.f3 { animation: fireShootLeft 2.5s infinite ease-out 1s; }
+.fire.f4 { animation: fireShootRight 1.5s infinite ease-out 1.2s; }
+.fire.f5 { animation: fireShootLeft 2s infinite ease-out 1.8s; }
 
-@keyframes fireShoot {
-  0% { bottom: 0; transform: scale(1); opacity: 1; }
+@keyframes fireShootLeft {
+  0% { bottom: 0; left: 50%; transform: scale(1); opacity: 1; }
   50% { opacity: 1; }
-  100% { bottom: 100%; transform: scale(0.2); opacity: 0; }
+  100% { bottom: 100%; left: 20%; transform: scale(0.2); opacity: 0; }
+}
+
+@keyframes fireShootRight {
+  0% { bottom: 0; left: 50%; transform: scale(1); opacity: 1; }
+  50% { opacity: 1; }
+  100% { bottom: 100%; left: 80%; transform: scale(0.2); opacity: 0; }
 }
 
 /* Auth Card Overrides */
 .relative-z {
   position: relative;
   z-index: 10;
-  background: rgba(255, 250, 240, 0.85); 
-  backdrop-filter: blur(10px);
+  background: rgba(255, 250, 240, 0.70); 
+  backdrop-filter: blur(8px);
   box-shadow: 0 15px 35px rgba(0,0,0,0.2);
   margin: 20px;
   width: min(460px, calc(100% - 40px));
 }
 
 body.dark .relative-z {
-  background: rgba(30, 41, 59, 0.85);
+  background: rgba(30, 41, 59, 0.75);
 }
