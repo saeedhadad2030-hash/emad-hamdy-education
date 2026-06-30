@@ -376,7 +376,7 @@
       <div class="splash">
         <div class="splash-content">
           ${logoSvg("brand-mark splash-logo")}
-          <h1>چيهان البراوي</h1>
+          <h1>مستر عماد حمدي</h1>
           <p>تاريخ وجغرافيا بشكل أوضح</p>
           <div class="splash-loader"></div>
         </div>
@@ -507,7 +507,7 @@
           <div class="brand">
             ${logoSvg("brand-mark")}
             <div>
-              <h1>چيهان البراوي</h1>
+              <h1>مستر عماد حمدي</h1>
               <p>منصة التاريخ والجغرافيا</p>
             </div>
           </div>
@@ -541,7 +541,7 @@
           <div class="brand">
             ${logoSvg("brand-mark")}
             <div>
-              <h1>چيهان البراوي</h1>
+              <h1>مستر عماد حمدي</h1>
               <p>إعداد المنصة مطلوب</p>
             </div>
           </div>
@@ -558,7 +558,7 @@
         <div class="brand">
           ${logoSvg("brand-mark")}
           <div>
-            <h2>چيهان البراوي</h2>
+            <h2>مستر عماد حمدي</h2>
             <p>تاريخ وجغرافيا</p>
           </div>
         </div>
@@ -589,7 +589,7 @@
         <div class="brand">
           ${logoSvg("brand-mark")}
           <div class="brand-text">
-            <h2>چيهان البراوي</h2>
+            <h2>مستر عماد حمدي</h2>
             <p>${isAdmin() ? "وضع المدرس" : "تاريخ وجغرافيا"}</p>
           </div>
         </div>
@@ -697,7 +697,7 @@
         <div class="hero-panel">
           <span class="pill gold">منصة تاريخ وجغرافيا</span>
           <h2>افهم التاريخ والجغرافيا من غير حفظ أعمى.</h2>
-          <p>كورسات منظمة، فيديوهات مرتبة حسب الأقسام، ومتابعة من چيهان البراوي للطلاب خطوة بخطوة.</p>
+          <p>كورسات منظمة، فيديوهات مرتبة حسب الأقسام، ومتابعة من مستر عماد حمدي للطلاب خطوة بخطوة.</p>
           <div class="hero-actions">
             <button class="btn gold" data-route="courses">تصفح الكورسات</button>
             <button class="btn secondary" data-route="support">تواصل معانا</button>
@@ -742,7 +742,7 @@
       <section class="section about-section" id="about-carousel-container">
         <div class="section-title">
           <div>
-            <h2>نبذة عن چيهان البراوي</h2>
+            <h2>نبذة عن مستر عماد حمدي</h2>
             <p class="muted">لمحات وصور من رحلة الشرح والمتابعة مع الطلاب.</p>
           </div>
           ${entries.length > 1 ? `
@@ -758,7 +758,7 @@
               <article class="about-card ${index === 0 ? 'active' : ''}" data-about-slide="${index}">
                 ${entry.image_url ? `<div class="about-image" style="${bg(entry.image_url)}"></div>` : ""}
                 <div class="about-content">
-                  <span class="pill">چيهان البراوي</span>
+                  <span class="pill">مستر عماد حمدي</span>
                   <h3>${escapeHtml(entry.title)}</h3>
                   <p>${escapeHtml(entry.body)}</p>
                   <div class="about-meta">
@@ -900,7 +900,7 @@
             <div class="row">
               <span class="pill">📚 ${sections.length} قسم</span>
               <span class="pill">🎥 ${totalLessons} فيديو</span>
-              <span class="pill">👩‍🏫 ${escapeHtml(course.teacher_name || 'چيهان البراوي')}</span>
+              <span class="pill">👨‍🏫 ${escapeHtml(course.teacher_name || 'مستر عماد حمدي')}</span>
             </div>
           </div>
         </div>
@@ -1068,7 +1068,7 @@
       <article class="post-card">
         ${post.image_url ? `<div class="post-image" style="${bg(post.image_url)}"></div>` : ""}
         <div class="post-body">
-          <span class="pill gold">چيهان البراوي</span>
+          <span class="pill gold">مستر عماد حمدي</span>
           <h3>${escapeHtml(post.title)}</h3>
           <p>${escapeHtml(post.body)}</p>
           ${showSocial ? `
@@ -1169,7 +1169,7 @@
           </div>
           <div class="card">
             <h3>وصف المنصة</h3>
-            <p>منصة تعليمية لچيهان البراوي لشرح التاريخ والجغرافيا بأسلوب منظم وسهل، مع كورسات مدفوعة يتم تفعيلها يدويًا بعد التواصل.</p>
+            <p>منصة تعليمية لمستر عماد حمدي لشرح التاريخ والجغرافيا بأسلوب منظم وسهل، مع كورسات مدفوعة يتم تفعيلها يدويًا بعد التواصل.</p>
             <button class="btn ghost" data-share>مشاركة الموقع</button>
           </div>
         </div>
@@ -2147,7 +2147,7 @@
       description: values.description,
       image_url: uploadedImage || values.imageUrl,
       attachments,
-      teacher_name: "چيهان البراوي",
+      teacher_name: "مستر عماد حمدي",
       is_published: true
     };
     let courseId = "";
@@ -2794,7 +2794,7 @@
 
   function whatsappCourseLink(course) {
     const message = [
-      `السلام عليكم چيهان البراوي،`,
+      `السلام عليكم مستر عماد حمدي،`,
       ``,
       `أريد الاشتراك في الكورس التالي:`,
       `• الكورس: ${course.title}`,
@@ -2814,12 +2814,12 @@
   }
 
   function whatsappGeneralLink() {
-    const message = `السلام عليكم، أريد التواصل مع منصة چيهان البراوي. الاسم: ${state.profile.full_name}`;
+    const message = `السلام عليكم، أريد التواصل مع منصة مستر عماد حمدي. الاسم: ${state.profile.full_name}`;
     return `https://wa.me/${config.whatsappNumber}?text=${encodeURIComponent(message)}`;
   }
 
   function shareSite() {
-    const data = { title: "منصة چيهان البراوي", text: "منصة التاريخ والجغرافيا", url: location.href };
+    const data = { title: "منصة مستر عماد حمدي", text: "منصة التاريخ والجغرافيا", url: location.href };
     if (navigator.share) navigator.share(data);
     else navigator.clipboard.writeText(location.href).then(() => toast("تم نسخ رابط الموقع."));
   }
@@ -2931,7 +2931,23 @@
   }
 
   function logoSvg(className) {
-    return `<img src="./assets/logo.png" class="${className}" alt="شعار چيهان البراوي" style="width: 100%; height: 100%; max-width: 120px; aspect-ratio: 1/1; object-fit: contain;">`;
+    return `
+      <svg class="${className}" viewBox="0 0 120 120" role="img" aria-label="شعار مستر عماد حمدي">
+        <defs>
+          <linearGradient id="logoGold" x1="20" x2="95" y1="15" y2="110" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#f3d27a"/>
+            <stop offset="1" stop-color="#c89436"/>
+          </linearGradient>
+        </defs>
+        <circle cx="60" cy="60" r="54" fill="#2f5d50"/>
+        <circle cx="60" cy="60" r="45" fill="#f4ecd8"/>
+        <path d="M28 78c15-11 45-11 64 0V35c-17-9-46-9-64 0v43Z" fill="url(#logoGold)" stroke="#8b5f35" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M34 41c14-6 35-6 52 0M34 52c15-6 37-6 52 0M34 63c15-6 37-6 52 0" fill="none" stroke="#23312d" stroke-linecap="round" stroke-width="3"/>
+        <circle cx="60" cy="58" r="17" fill="none" stroke="#2f5d50" stroke-width="4"/>
+        <path d="M60 37v42M39 58h42M48 46c8 8 17 8 24 0M48 70c8-8 17-8 24 0" fill="none" stroke="#2f5d50" stroke-linecap="round" stroke-width="3"/>
+        <path d="M60 47l6 11-6 13-6-13 6-11Z" fill="#8b5f35"/>
+      </svg>
+    `;
   }
 
   function createFallbackStore() {
