@@ -53,7 +53,7 @@ create table if not exists public.courses (
   description text not null default '',
   image_url text not null default '',
   attachments jsonb not null default '[]',
-  teacher_name text not null default 'مستر عماد حمدي',
+  teacher_name text not null default 'چيهان البراوي',
   is_published boolean not null default true,
   created_at timestamptz not null default now()
 );
